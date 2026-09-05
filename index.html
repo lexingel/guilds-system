@@ -118,6 +118,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--rift);outline-o
 .relicrow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .relicrow:last-child{border-bottom:none}
 
+/* ---- items: drag & drop ---- */
+.itemslot{width:38px;height:38px;border:1px dashed var(--line);border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--surface3)}
+.itemslot.dragover{border-color:var(--rift);background:var(--rift-dim)}
+.itemtile{width:100%;height:100%;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#100e16;cursor:grab}
+.itemtile:active{cursor:grabbing}
+.itembag{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px dashed var(--line);border-radius:10px;background:var(--surface3);min-height:56px}
+.itembag.dragover{border-color:var(--rift);background:var(--rift-dim)}
+.herorow{display:flex;align-items:center;gap:10px;padding:6px 0}
+.herorow .name{flex:1;min-width:90px;font-size:.84rem;font-weight:600}
+
 /* ---- skill tree ---- */
 .skilltree{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
 .skirow{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
@@ -422,7 +432,7 @@ let revealTimer=null;
 function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
 
 let state=null;
-let ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false,showRelicLoadout:false};
+let ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false,showRelicLoadout:false,showRunInventory:false};
 
 function defaultState(){return{guildName:null,nextId:1,resources:{coins:60,crystals:15,tokens:0},heroes:[],relics:[],items:[],detectors:[],upgrades:{},caps:{},recruitPool:[],triageUsedThisCycle:false,sealedCount:0,run:null,onboarded:false,bestEndlessCycle:0,currentChampion:null};}
 function save(){localStorage.setItem('guildSystemSave',JSON.stringify(state));}
@@ -764,7 +774,7 @@ function fieldTriageAction(){
 }
 function resetGuild(){
   if(!ui.confirmReset){ui.confirmReset=true;render();setTimeout(()=>{ui.confirmReset=false;render();},3000);return;}
-  localStorage.removeItem('guildSystemSave');state=null;ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false,showRelicLoadout:false};render();
+  localStorage.removeItem('guildSystemSave');state=null;ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false,showRelicLoadout:false,showRunInventory:false};render();
 }
 
 /* ---------------- actions: rift run ---------------- */
@@ -1061,9 +1071,9 @@ function continueEndless(){state.run.sealed=null;save();render();}
 function retreatNow(){
   if(!ui.confirmRetreat){ui.confirmRetreat=true;render();setTimeout(()=>{ui.confirmRetreat=false;render();},3000);return;}
   ui.confirmRetreat=false;
-  state.run=null;flash('Retreated — loot kept, no Seal Tokens earned.');save();render();
+  state.run=null;ui.showRunInventory=false;flash('Retreated — loot kept, no Seal Tokens earned.');save();render();
 }
-function finishRun(){state.run=null;save();render();}
+function finishRun(){state.run=null;ui.showRunInventory=false;save();render();}
 
 /* ---------------- render ---------------- */
 function setTab(t){ui.tab=t;render();}
@@ -1340,6 +1350,10 @@ function renderRun(){
     if(i<run.layers.length-1)out+=`<div class="node-link"></div>`;
   });
   out+=`</div>`;
+  out+=`<div style="margin-bottom:12px">
+    <button class="btn ghost" onclick="toggleRunInventory()">${ui.showRunInventory?'Hide':'🎒'} Inventory &amp; Loadout</button>
+    ${ui.showRunInventory?renderRunInventory():''}
+  </div>`;
 
   if(run.sealed){
     if(run.sealed.continuing){
@@ -1371,6 +1385,20 @@ function renderRun(){
   return out;
 }
 
+function toggleRunInventory(){ui.showRunInventory=!ui.showRunInventory;render();}
+function renderRunInventory(){
+  const party=currentParty().filter(h=>!h.isChampion);
+  let out=`<div class="panel" style="margin-top:10px">`;
+  if(party.length){
+    out+=party.map(h=>`<div class="herorow"><span class="name">${h.name.split(' ')[0]}</span>${renderHeroItemSlots(h)}</div>`).join('');
+  }else{
+    out+=`<p class="small muted">No roster heroes in this party — Items are hero-bound gear.</p>`;
+  }
+  out+=`<div class="small muted" style="margin:10px 0 6px">🎒 Bag <span class="muted" style="font-weight:400">— drag onto a slot above to equip, or here to unequip</span></div>
+    ${renderItemBag()}
+  </div>`;
+  return out;
+}
 function renderChoicePanel(options){
   const title={combat:'Rift Encounter',elite:'Elite Encounter',shop:'Rift Hallway Shop',hazard:'Environmental Hazard'};
   const blurb={combat:'A guaranteed fight — steady Coins, Crystals and XP.',elite:'A tougher fight. Better loot, and the only source of bonus Crystal drops.',shop:'No fight. Spend Coins on Relics and Detectors.',hazard:'No fight, but risk taking damage — a chance at bonus Crystals.'};
@@ -1533,7 +1561,7 @@ function renderAuction(){
     </div>`;
   });
   if(state.items.length){
-    out+=`<div class="small" style="color:var(--rift);font-weight:600;margin:12px 0 6px">Items <span class="muted" style="font-weight:400">— hero-bound, set slots on the Roster tab</span></div>`;
+    out+=`<div class="small" style="color:var(--rift);font-weight:600;margin:12px 0 6px">Items <span class="muted" style="font-weight:400">— hero-bound; drag &amp; drop on the Roster tab, or mid-rift via Inventory &amp; Loadout</span></div>`;
   }
   state.items.forEach(it=>{
     const rarity=RARITIES.find(x=>x.id===it.rarity);
@@ -1594,18 +1622,38 @@ function renderManagement(){
 
 function setRosterSort(v){ui.rosterSort=v;render();}
 function setRosterFilter(v){ui.rosterFilter=v;render();}
-function renderItemSlots(h){
-  return ITEM_SLOTS.map(slot=>{
+function dragItem(ev,itemId){ev.dataTransfer.setData('text/plain',itemId);}
+function itemTileHtml(it){
+  const rarity=RARITIES.find(r=>r.id===it.rarity);
+  return `<div class="itemtile" draggable="true" ondragstart="dragItem(event,'${it.id}')" style="background:${rarity.color}" title="${it.name} — ${itemDesc(it)}">${ITEM_SLOT_LABEL[it.slot][0]}</div>`;
+}
+function dropOnSlot(ev,heroId,slot){
+  ev.preventDefault();ev.currentTarget.classList.remove('dragover');
+  const itemId=ev.dataTransfer.getData('text/plain');
+  equipItem(heroId,slot,itemId);
+}
+function dropOnBag(ev){
+  ev.preventDefault();ev.currentTarget.classList.remove('dragover');
+  const itemId=ev.dataTransfer.getData('text/plain');
+  unequipItemById(itemId);
+}
+function unequipItemById(id){
+  const it=state.items.find(x=>x.id===id);if(!it)return;
+  it.equippedTo=null;save();render();
+}
+function renderHeroItemSlots(h){
+  return `<div style="display:flex;gap:6px">${ITEM_SLOTS.map(slot=>{
     const equipped=state.items.find(it=>it.equippedTo===h.id&&it.slot===slot);
-    const options=state.items.filter(it=>it.slot===slot&&(!it.equippedTo||it.equippedTo===h.id));
-    return `<div class="small" style="margin-top:4px;display:flex;align-items:center;gap:6px">
-      <span class="muted" style="min-width:52px">${ITEM_SLOT_LABEL[slot]}</span>
-      <select class="btn" style="flex:1;font-size:.76rem;padding:4px 8px" onchange="equipItem('${h.id}','${slot}',this.value)">
-        <option value="">— Empty —</option>
-        ${options.map(it=>`<option value="${it.id}" ${equipped&&equipped.id===it.id?'selected':''}>${it.name} (${itemDesc(it)})</option>`).join('')}
-      </select>
+    return `<div class="itemslot" title="${ITEM_SLOT_LABEL[slot]}${equipped?'':' — Empty'}" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="dropOnSlot(event,'${h.id}','${slot}')">
+      ${equipped?itemTileHtml(equipped):`<span class="small muted" style="font-size:.62rem">${ITEM_SLOT_LABEL[slot][0]}</span>`}
     </div>`;
-  }).join('');
+  }).join('')}</div>`;
+}
+function renderItemBag(){
+  const unequipped=state.items.filter(it=>!it.equippedTo);
+  return `<div class="itembag" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="dropOnBag(event)">
+    ${unequipped.length?unequipped.map(it=>`<div class="itemslot">${itemTileHtml(it)}</div>`).join(''):'<span class="small muted">Bag is empty — Items drop from combat and shops.</span>'}
+  </div>`;
 }
 function renderRoster(){
   let out=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
@@ -1623,7 +1671,10 @@ function renderRoster(){
       </select>
       ${fieldTriageAvailable()?`<button class="btn ${state.triageUsedThisCycle?'':'primary'}" ${state.triageUsedThisCycle?'disabled':''} onclick="fieldTriageAction()">Field Triage${state.triageUsedThisCycle?' (used)':''}</button>`:''}
     </div>
-  </div><div class="grid g4">`;
+  </div>
+  <div class="small muted" style="margin-bottom:6px">🎒 Item Bag <span class="muted" style="font-weight:400">— drag onto a hero's Weapon/Trinket slot to equip</span></div>
+  ${renderItemBag()}
+  <div class="grid g4" style="margin-top:14px">`;
   let heroes=[...state.heroes];
   if(ui.rosterFilter&&ui.rosterFilter!=='all')heroes=heroes.filter(h=>h.clsId===ui.rosterFilter);
   if(ui.rosterSort==='level')heroes.sort((a,b)=>(b.level||1)-(a.level||1));
@@ -1638,7 +1689,7 @@ function renderRoster(){
     const confirmingDismiss=ui.confirmDismiss===h.id;
     out+=`<div class="herocard ${down?'down':''}" style="border-color:${RANK_COLOR[h.rank]}">${heroCardInner(h,cls)}
       <div class="small mono muted" style="margin-top:2px">Power ${powerOf(h)}</div>
-      ${renderItemSlots(h)}
+      <div style="margin-top:6px">${renderHeroItemSlots(h)}</div>
       ${down?`<div class="small" style="color:var(--hazard);margin-top:6px">Recovering: ${timeLeft(h.downedUntil)}</div>`:''}
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
         ${NEG_TRAITS.includes(h.trait)&&lvl('ops.trait')>0?`<button class="btn ghost small" onclick="scrubTrait('${h.id}')">Scrub Trait (30c)</button>`:''}
