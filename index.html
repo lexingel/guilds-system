@@ -161,6 +161,13 @@ const RELIC_SPECIALS=[
  {kind:'wipe_guard',value:.08,label:'Relic ward: survive a wipe at 8% HP'},
  {kind:'boss_alpha_strike',value:.3,label:'+30% opening volley vs Bosses'},
 ];
+/* Items: hero-bound gear (2 slots/hero) distinct from party-wide Relics —
+   reuses the same kind vocabulary so they flow through heroSkillTotal for free. */
+const ITEM_SLOTS=['weapon','trinket'];
+const ITEM_SLOT_LABEL={weapon:'Weapon',trinket:'Trinket'};
+const ITEM_NOUNS={weapon:['Blade','Bow','Staff','Mace','Dagger'],trinket:['Ring','Amulet','Charm','Band','Talisman']};
+const ITEM_KIND_POOL=['dmg_pct','hp_pct','first_round_pct','escalate_pct','mend_pct','hazard_guard_pct','dodge_pct'];
+const ITEM_KIND_BASE={dmg_pct:.12,hp_pct:.12,first_round_pct:.15,escalate_pct:.04,mend_pct:.06,hazard_guard_pct:.12,dodge_pct:.10};
 /* Equipping 3+ of one element grants that element's own bonus instead of a
    flat number — makes "which element am I building" a real choice. */
 const SYNERGY_BONUS={
@@ -372,6 +379,11 @@ function generateChampion(){
   champ.hp=maxHp(champ);
   return champ;
 }
+function ensureChampion(){
+  if(!state.currentChampion)state.currentChampion=generateChampion();
+  const c=state.currentChampion;c.hp=maxHp(c);c.downedUntil=0;
+  return c;
+}
 const BRANCHES=[
  {id:'ops',name:'Operations Branch',sub:'Hero Roster & Combat Management',nodes:[
    {id:'roster',name:'Roster Expansion',max:5,costBase:30,costStep:20,effect:l=>`+${l*2} hero slots`,cap:{name:'Elite Barracks',cost:400,desc:'Set a Guild Mentor — new recruits join one level higher.'}},
@@ -410,9 +422,9 @@ let revealTimer=null;
 function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
 
 let state=null;
-let ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false};
+let ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false,showRelicLoadout:false};
 
-function defaultState(){return{guildName:null,nextId:1,resources:{coins:60,crystals:15,tokens:0},heroes:[],relics:[],detectors:[],upgrades:{},caps:{},recruitPool:[],triageUsedThisCycle:false,sealedCount:0,run:null,onboarded:false,bestEndlessCycle:0};}
+function defaultState(){return{guildName:null,nextId:1,resources:{coins:60,crystals:15,tokens:0},heroes:[],relics:[],items:[],detectors:[],upgrades:{},caps:{},recruitPool:[],triageUsedThisCycle:false,sealedCount:0,run:null,onboarded:false,bestEndlessCycle:0,currentChampion:null};}
 function save(){localStorage.setItem('guildSystemSave',JSON.stringify(state));}
 function load(){
   try{const raw=localStorage.getItem('guildSystemSave');if(raw)state=JSON.parse(raw);}catch(e){}
@@ -421,6 +433,7 @@ function load(){
   }
   if(state&&state.heroes)state.heroes.forEach(h=>{if(!h.rank)h.rank='F';});
   if(state&&state.recruitPool)state.recruitPool.forEach(h=>{if(!h.rank)h.rank='F';});
+  if(state&&!state.items)state.items=[];
 }
 
 function lvl(id){return state.upgrades[id]||0;}
@@ -457,6 +470,7 @@ function heroSkillTotal(h,kind){
   let s=0;
   if(h.skills){const tree=CLASS_SKILLS[h.clsId]||[];tree.forEach(n=>{if(n.kind===kind&&h.skills[n.id])s+=n.value;});}
   if(h.innateKind===kind)s+=h.innateValue||0;
+  s+=heroItemTotal(h,kind);
   return s;
 }
 function partySkillTotal(party,kind){return party.reduce((s,h)=>s+heroSkillTotal(h,kind),0);}
@@ -537,6 +551,17 @@ function genRelic(rarityId){
 }
 function relicDesc(r){return `+${r.dmg} DMG · +${r.hp} Shield${r.special?` · ${r.special.label}`:''}`;}
 function relicSpecialTotal(kind){return equippedRelics().reduce((s,r)=>s+(r.special&&r.special.kind===kind?r.special.value:0),0);}
+function genItem(rarityId){
+  const rarity=RARITIES.find(r=>r.id===rarityId);
+  const slot=pick(ITEM_SLOTS);
+  const kind=pick(ITEM_KIND_POOL);
+  const value=Math.round(ITEM_KIND_BASE[kind]*rarity.mult*1000)/1000;
+  const noun=pick(ITEM_NOUNS[slot]);
+  return{name:`${rarity.name} ${noun}`,slot,rarity:rarity.id,kind,value};
+}
+function itemDesc(it){return describeSkill({kind:it.kind,value:it.value});}
+function genLoot(rarityId){return Math.random()<0.5?{...genItem(rarityId),lootType:'item'}:{...genRelic(rarityId),lootType:'relic'};}
+function heroItemTotal(h,kind){return state.items.filter(it=>it.equippedTo===h.id&&it.kind===kind).reduce((s,it)=>s+it.value,0);}
 function genMonster(diff,floorIdx,kind){
   const scale=1+floorIdx*0.12;
   const hpMult=kind==='boss'?1.8:(kind==='elite'?1.45:1);
@@ -619,6 +644,7 @@ function dismissHero(heroId){
   const rank=RANKS.find(r=>r.id===h.rank);
   const refund=Math.round((rank?rank.cost:25)*.3);
   state.heroes=state.heroes.filter(x=>x.id!==heroId);
+  state.items.filter(it=>it.equippedTo===heroId).forEach(it=>it.equippedTo=null);
   state.resources.coins+=refund;
   flash(`${h.name} dismissed — +${refund}c.`);save();render();
 }
@@ -663,6 +689,24 @@ function sellRelic(id){
   const fee=Math.max(.05,.15-brokerFeeReduction());
   const sale=Math.round(base*(1-fee));
   state.resources.coins+=sale;state.relics=state.relics.filter(x=>x.id!==id);
+  flash(`Sold for +${sale} Coins`);save();render();
+}
+function equipItem(heroId,slot,itemId){
+  const h=state.heroes.find(x=>x.id===heroId);if(!h)return;
+  const cur=state.items.find(it=>it.equippedTo===heroId&&it.slot===slot);
+  if(cur)cur.equippedTo=null;
+  if(itemId){
+    const it=state.items.find(x=>x.id===itemId);if(!it||it.slot!==slot)return;
+    it.equippedTo=heroId;
+  }
+  save();render();
+}
+function sellItem(id){
+  const it=state.items.find(x=>x.id===id);if(!it||it.equippedTo)return;
+  const base=15*RARITIES.find(x=>x.id===it.rarity).mult;
+  const fee=Math.max(.05,.15-brokerFeeReduction());
+  const sale=Math.round(base*(1-fee));
+  state.resources.coins+=sale;state.items=state.items.filter(x=>x.id!==id);
   flash(`Sold for +${sale} Coins`);save();render();
 }
 function sellDetector(id){
@@ -720,13 +764,13 @@ function fieldTriageAction(){
 }
 function resetGuild(){
   if(!ui.confirmReset){ui.confirmReset=true;render();setTimeout(()=>{ui.confirmReset=false;render();},3000);return;}
-  localStorage.removeItem('guildSystemSave');state=null;ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false};render();
+  localStorage.removeItem('guildSystemSave');state=null;ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false,showRelicLoadout:false};render();
 }
 
 /* ---------------- actions: rift run ---------------- */
 function openAssembly(diffId){
   ui.pendingDiff=diffId;ui.pendingHeroIds=[];
-  ui.pendingChampion=generateChampion();
+  ui.pendingChampion=ensureChampion();
   const n=relicChoiceCount();
   ui.pendingRelicOptions=n>0?Array.from({length:n},()=>genRelic(inheritedPower()?'rare':'common')):[];
   ui.pendingRelicChoiceIdx=null;render();
@@ -897,7 +941,7 @@ function engageCombat(kind){
     const xpGain=isBoss?30:(kind==='elite'?20:12);
     party.forEach(h=>gainXp(h,xpGain));
     log.push(`+${xpGain} XP to each hero in the fight.`);
-    if(!isBoss)rewardOptions=[genRelic(weightedRarity()),genRelic(weightedRarity())];
+    if(!isBoss)rewardOptions=[genLoot(weightedRarity()),genLoot(weightedRarity())];
   }
   state.run.nodeState={type:'combat',log,won,kind,rounds:round,revealedCount:0,resolving:true,rewardOptions,rewardChosen:false};
   save();render();
@@ -950,10 +994,11 @@ function ensureShopOffers(){
   if(state.run.nodeState&&state.run.nodeState.type==='shop')return;
   const boosted=!!state.pendingShopBoost;
   const offers=[0,1,2].map((_,i)=>{
-    const rarity=(boosted&&i===0)?'epic':weightedRarity();const relic=genRelic(rarity);
+    const rarity=(boosted&&i===0)?'epic':weightedRarity();
+    const loot=(boosted&&i===0)?{...genRelic(rarity),lootType:'relic'}:genLoot(rarity);
     const priceBase=10+15*RARITIES.find(x=>x.id===rarity).mult;
-    relic.price=Math.max(4,Math.round(priceBase*(1-merchantPriceReduction())));
-    return relic;
+    loot.price=Math.max(4,Math.round(priceBase*(1-merchantPriceReduction())));
+    return loot;
   });
   if(boosted){state.pendingShopBoost=false;flash('Shop Boost consumed — an Epic Relic is guaranteed here.');}
   state.run.nodeState={type:'shop',offers};
@@ -962,13 +1007,21 @@ function buyShopOffer(idx){
   const off=state.run.nodeState.offers[idx];if(!off||off.bought)return;
   if(state.resources.coins<off.price)return flash('Not enough Coins');
   state.resources.coins-=off.price;off.bought=true;
-  state.relics.push({id:'rl'+(state.nextId++),name:off.name,type:off.type,rarity:off.rarity,dmg:off.dmg,hp:off.hp,special:off.special,equipped:equippedRelics().length<relicSlotCap()});
+  if(off.lootType==='item'){
+    state.items.push({id:'it'+(state.nextId++),name:off.name,slot:off.slot,rarity:off.rarity,kind:off.kind,value:off.value,equippedTo:null});
+  }else{
+    state.relics.push({id:'rl'+(state.nextId++),name:off.name,type:off.type,rarity:off.rarity,dmg:off.dmg,hp:off.hp,special:off.special,equipped:equippedRelics().length<relicSlotCap()});
+  }
   save();render();
 }
 function pickCombatReward(idx){
   const ns=state.run.nodeState;if(!ns||!ns.rewardOptions)return;
   const r=ns.rewardOptions[idx];if(!r)return;
-  state.relics.push({id:'rl'+(state.nextId++),name:r.name,type:r.type,rarity:r.rarity,dmg:r.dmg,hp:r.hp,special:r.special,equipped:equippedRelics().length<relicSlotCap()});
+  if(r.lootType==='item'){
+    state.items.push({id:'it'+(state.nextId++),name:r.name,slot:r.slot,rarity:r.rarity,kind:r.kind,value:r.value,equippedTo:null});
+  }else{
+    state.relics.push({id:'rl'+(state.nextId++),name:r.name,type:r.type,rarity:r.rarity,dmg:r.dmg,hp:r.hp,special:r.special,equipped:equippedRelics().length<relicSlotCap()});
+  }
   ns.rewardChosen=true;flash(`${r.name} added to the vault.`);save();render();
 }
 function skipCombatReward(){
@@ -987,6 +1040,7 @@ function sealRift(){
   state.resources.tokens+=tokens;
   state.sealedCount++;state.triageUsedThisCycle=false;
   refreshRecruitPool();
+  state.currentChampion=generateChampion();
   if(state.run.endless){
     const newCycle=(state.run.cycle||0)+1;
     if(newCycle>(state.bestEndlessCycle||0))state.bestEndlessCycle=newCycle;
@@ -1152,6 +1206,10 @@ function renderAssembly(){
     </div>`;
     if(wounded.length)out+=`<div class="small" style="color:var(--hazard);margin-top:6px">Warning: ${wounded.join(', ')} ${wounded.length>1?'are':'is'} badly wounded.</div>`;
   }
+  out+=`<div style="margin-top:16px">
+    <button class="btn ghost" onclick="toggleRelicLoadout()">${ui.showRelicLoadout?'Hide':'Configure'} Relic Loadout (${equippedRelics().length}/${relicSlotCap()} equipped)</button>
+    ${ui.showRelicLoadout?renderRelicLoadout():''}
+  </div>`;
   out+=`<label class="small" style="margin-top:14px;display:flex;align-items:center;gap:8px;cursor:pointer;color:${ui.pendingHardcore?'var(--hazard)':'inherit'}">
     <input type="checkbox" ${ui.pendingHardcore?'checked':''} onchange="toggleHardcore()">
     <b>Hardcore</b> — a wipe permanently loses your roster heroes, but Coins/Crystals/Seal Tokens earned are +50%.
@@ -1160,6 +1218,21 @@ function renderAssembly(){
     <button class="btn primary" onclick="enterRift()">Enter the Rift${ui.pendingHardcore?' (Hardcore)':''}</button>
     <button class="btn ghost" onclick="cancelAssembly()">Cancel</button>
   </div></div>`;
+  return out;
+}
+function toggleRelicLoadout(){ui.showRelicLoadout=!ui.showRelicLoadout;render();}
+function renderRelicLoadout(){
+  if(!state.relics.length)return `<p class="small muted" style="margin-top:8px">No Relics owned yet.</p>`;
+  let out=`<div style="margin-top:10px">`;
+  state.relics.forEach(r=>{
+    const rarity=RARITIES.find(x=>x.id===r.rarity);
+    out+=`<div class="relicrow">
+      <div class="badge" style="background:${rarity.color}">${r.type[0]}</div>
+      <div style="flex:1;min-width:140px"><div style="font-weight:600;font-size:.86rem">${r.name}${r.level>1?` +${r.level-1}`:''}</div><div class="small muted">${r.type} · ${rarity.name} · ${relicDesc(r)}</div></div>
+      <button class="btn ${r.equipped?'primary':''}" onclick="toggleEquip('${r.id}')">${r.equipped?'Equipped':'Equip'}</button>
+    </div>`;
+  });
+  out+=`</div>`;
   return out;
 }
 function toggleHardcore(){ui.pendingHardcore=!ui.pendingHardcore;render();}
@@ -1366,10 +1439,11 @@ function renderCombatPanel(kind){
 function renderRewardChoice(options){
   let out=`<div style="margin-top:14px"><h3 style="font-size:.95rem;margin-bottom:8px">Choose a Spoil of War</h3><div class="grid g2">`;
   options.forEach((o,idx)=>{
+    const isItem=o.lootType==='item';
     out+=`<div class="shopitem" style="cursor:pointer" onclick="pickCombatReward(${idx})">
-      <div class="rtype">${o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
+      <div class="rtype">${isItem?ITEM_SLOT_LABEL[o.slot]:o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
       <div style="font-weight:600">${o.name}</div>
-      <div class="small mono muted">${relicDesc(o)}</div>
+      <div class="small mono muted">${isItem?itemDesc(o):relicDesc(o)}</div>
     </div>`;
   });
   out+=`</div><button class="btn ghost" style="margin-top:10px" onclick="skipCombatReward()">Skip</button></div>`;
@@ -1392,13 +1466,14 @@ function renderHazardPanel(){
 function renderShopPanel(){
   ensureShopOffers();
   const offers=state.run.nodeState.offers;
-  let out=`<h3 style="color:var(--gold)">Rift Hallway Shop</h3><p class="small muted">Relics and Detectors only — hero upgrades wait back at the Terminal.</p>
+  let out=`<h3 style="color:var(--gold)">Rift Hallway Shop</h3><p class="small muted">Relics, Items and Detectors only — hero upgrades wait back at the Terminal.</p>
     <div class="grid g3">`;
   offers.forEach((o,idx)=>{
+    const isItem=o.lootType==='item';
     out+=`<div class="shopitem">
-      <div class="rtype">${o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
+      <div class="rtype">${isItem?ITEM_SLOT_LABEL[o.slot]:o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
       <div style="font-weight:600">${o.name}</div>
-      <div class="small mono muted">${relicDesc(o)}</div>
+      <div class="small mono muted">${isItem?itemDesc(o):relicDesc(o)}</div>
       <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
         <span class="mono" style="color:var(--gold)">${o.price}c</span>
         <button class="btn" ${o.bought?'disabled':''} onclick="buyShopOffer(${idx})">${o.bought?'Bought':'Buy'}</button>
@@ -1439,8 +1514,11 @@ function renderRecruits(){
 }
 
 function renderAuction(){
-  let out=`<div class="panel"><h3 style="font-size:.95rem;margin-bottom:8px">Relics & Detectors</h3>`;
-  if(!state.relics.length&&!state.detectors.length)out+=`<p class="small muted">Nothing in the vault yet — find Relics and Rift Detectors while running Rifts.</p>`;
+  let out=`<div class="panel"><h3 style="font-size:.95rem;margin-bottom:8px">Relics, Items &amp; Detectors</h3>`;
+  if(!state.relics.length&&!state.items.length&&!state.detectors.length)out+=`<p class="small muted">Nothing in the vault yet — find Relics, Items and Rift Detectors while running Rifts.</p>`;
+  if(state.relics.length){
+    out+=`<div class="small" style="color:var(--rift);font-weight:600;margin:6px 0">Relics <span class="muted" style="font-weight:400">— party-wide, ${equippedRelics().length}/${relicSlotCap()} slots equipped</span></div>`;
+  }
   state.relics.forEach(r=>{
     const rarity=RARITIES.find(x=>x.id===r.rarity);
     const rlvl=r.level||1;const maxed=rlvl>=RELIC_MAX_LEVEL;
@@ -1454,6 +1532,21 @@ function renderAuction(){
       ${!r.equipped&&recycleUnlocked()?`<button class="btn ghost" onclick="scrapRelic('${r.id}')">Scrap</button>`:''}
     </div>`;
   });
+  if(state.items.length){
+    out+=`<div class="small" style="color:var(--rift);font-weight:600;margin:12px 0 6px">Items <span class="muted" style="font-weight:400">— hero-bound, set slots on the Roster tab</span></div>`;
+  }
+  state.items.forEach(it=>{
+    const rarity=RARITIES.find(x=>x.id===it.rarity);
+    const holder=it.equippedTo?state.heroes.find(h=>h.id===it.equippedTo):null;
+    out+=`<div class="relicrow">
+      <div class="badge" style="background:${rarity.color}">${ITEM_SLOT_LABEL[it.slot][0]}</div>
+      <div style="flex:1;min-width:140px"><div style="font-weight:600;font-size:.86rem">${it.name}</div><div class="small muted">${ITEM_SLOT_LABEL[it.slot]} · ${rarity.name} · ${itemDesc(it)}</div></div>
+      ${holder?`<span class="small muted">On ${holder.name.split(' the ')[0]}</span>`:`<button class="btn" onclick="sellItem('${it.id}')">Sell</button>`}
+    </div>`;
+  });
+  if(state.detectors.length){
+    out+=`<div class="small" style="color:var(--rift);font-weight:600;margin:12px 0 6px">Detectors</div>`;
+  }
   state.detectors.forEach(d=>{
     out+=`<div class="relicrow">
       <div class="badge" style="background:var(--token)">D</div>
@@ -1501,6 +1594,19 @@ function renderManagement(){
 
 function setRosterSort(v){ui.rosterSort=v;render();}
 function setRosterFilter(v){ui.rosterFilter=v;render();}
+function renderItemSlots(h){
+  return ITEM_SLOTS.map(slot=>{
+    const equipped=state.items.find(it=>it.equippedTo===h.id&&it.slot===slot);
+    const options=state.items.filter(it=>it.slot===slot&&(!it.equippedTo||it.equippedTo===h.id));
+    return `<div class="small" style="margin-top:4px;display:flex;align-items:center;gap:6px">
+      <span class="muted" style="min-width:52px">${ITEM_SLOT_LABEL[slot]}</span>
+      <select class="btn" style="flex:1;font-size:.76rem;padding:4px 8px" onchange="equipItem('${h.id}','${slot}',this.value)">
+        <option value="">— Empty —</option>
+        ${options.map(it=>`<option value="${it.id}" ${equipped&&equipped.id===it.id?'selected':''}>${it.name} (${itemDesc(it)})</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+}
 function renderRoster(){
   let out=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
     <div class="small muted">Roster ${state.heroes.length} / ${heroSlotCap()}</div>
@@ -1532,6 +1638,7 @@ function renderRoster(){
     const confirmingDismiss=ui.confirmDismiss===h.id;
     out+=`<div class="herocard ${down?'down':''}" style="border-color:${RANK_COLOR[h.rank]}">${heroCardInner(h,cls)}
       <div class="small mono muted" style="margin-top:2px">Power ${powerOf(h)}</div>
+      ${renderItemSlots(h)}
       ${down?`<div class="small" style="color:var(--hazard);margin-top:6px">Recovering: ${timeLeft(h.downedUntil)}</div>`:''}
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
         ${NEG_TRAITS.includes(h.trait)&&lvl('ops.trait')>0?`<button class="btn ghost small" onclick="scrubTrait('${h.id}')">Scrub Trait (30c)</button>`:''}
@@ -1565,6 +1672,7 @@ function selfCheck(){
     if(!RELIC_TYPES.includes(type))errors.push(`SYNERGY_BONUS has unknown type "${type}"`);
     if(!BUILD_KINDS.includes(s.kind))errors.push(`SYNERGY_BONUS.${type} has unknown kind "${s.kind}"`);
   });
+  ITEM_KIND_POOL.forEach(k=>{if(!BUILD_KINDS.includes(k))errors.push(`ITEM_KIND_POOL has unknown kind "${k}"`);if(!(k in ITEM_KIND_BASE))errors.push(`ITEM_KIND_BASE missing base value for "${k}"`);});
   if(RANKS.length!==7)errors.push(`RANKS has ${RANKS.length} entries, expected 7`);
   if(Object.keys(CLASS_SKILLS).length!==CLASSES.length)errors.push('CLASS_SKILLS role count does not match CLASSES');
   if(errors.length){

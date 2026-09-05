@@ -142,7 +142,7 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:v
 
   <section id="relics">
     <h2>Relics &amp; Items</h2>
-    <p class="lede">Found in Rift shops, as combat rewards, or as a starting pick from Relic Storage. Independent of hero/Champion rank — relics keep their own three-tier rarity.</p>
+    <p class="lede">Two distinct loot systems, both found in Rift shops and combat rewards (a 50/50 roll between the two on most drops), independent of hero/Champion rank — both keep their own three-tier rarity. <b style="color:var(--text)">Relics</b> are party-wide: flat DMG/Shield plus an occasional special effect, drawn from a shared pool with a limited number of equip slots. <b style="color:var(--text)">Items</b> are hero-bound gear: two slots per roster hero (Weapon, Trinket), each a focused percentage buff assigned to one hero at a time from the Roster tab.</p>
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Rarity tiers</h3>
     <div class="tablewrap"><table>
@@ -178,6 +178,20 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:v
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Relic upgrades</h3>
     <p class="small muted">Any owned relic can be spent Crystals on to level up (max level 5) at the Rift Auction — each level adds +15% to its DMG, Shield, and special-effect value. Cost is <span class="mono">15 × rarity multiplier × current level</span> Crystals.</p>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Items (hero-bound gear)</h3>
+    <p class="small muted">Two slots per roster hero — Weapon and Trinket — set from the Roster tab. Each item is a single percentage buff to that one hero, at meaningfully higher values than a relic special since it only affects one character. Base values below scale by the same rarity multiplier as relics (×1.0 / ×1.4 / ×1.9).</p>
+    <div class="tablewrap"><table>
+      <tr><th>Effect</th><th>Base Value</th></tr>
+      <tr><td>Damage</td><td class="mono">+12%</td></tr>
+      <tr><td>HP</td><td class="mono">+12%</td></tr>
+      <tr><td>First-strike damage</td><td class="mono">+15%</td></tr>
+      <tr><td>Escalating damage (stacking)</td><td class="mono">+4%/round</td></tr>
+      <tr><td>Mends HP each round</td><td class="mono">+6%</td></tr>
+      <tr><td>Hazard severity reduction</td><td class="mono">-12%</td></tr>
+      <tr><td>Dodge chance</td><td class="mono">+10%</td></tr>
+    </table></div>
+    <p class="small muted" style="margin-top:8px">Wipe-guard and Boss-alpha-strike stay Relic/Skill-only effects — kept off Items by design, since those are binary once-per-fight effects rather than a scaling stat.</p>
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Rift Detectors</h3>
     <p class="small muted">A rare drop from sealing a Rift (chance scales with Detector Tuning). Sold at the Rift Auction for Coins, or consumed for a Shop Boost — guarantees an Epic Relic on the next Rift's shop node instead. Base sale price: 80c (Lesser tier) / 200c (Greater) / 450c (Ascendant), plus a 30% bonus with Black Market Clearance.</p>
