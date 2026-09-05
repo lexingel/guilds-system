@@ -1,0 +1,506 @@
+<title>Guilds System Compendium</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ink:#15131c; --surface:#1e1a27; --surface2:#282232; --surface3:#332b40; --line:#3a3346;
+  --text:#ece7f4; --muted:#9a90ad; --muted2:#786e8e;
+  --rift:#3fe0a8; --rift-dim:rgba(63,224,168,.14);
+  --gold:#dba63f; --gold-dim:rgba(219,166,63,.14);
+  --crystal:#5fc7e8; --crystal-dim:rgba(95,199,232,.14);
+  --token:#b98ee0; --token-dim:rgba(185,142,224,.14);
+  --hazard:#e0654a; --hazard-dim:rgba(224,101,74,.14);
+  --elite:#e0954a; --elite-dim:rgba(224,149,74,.14);
+  --rankF:#8b8496; --rankE:#6fbf73; --rankD:#5fa8e8; --rankS:#f2c94c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.5}
+h1,h2,h3,h4{font-family:'Cinzel',Georgia,serif;text-wrap:balance;margin:0}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+::selection{background:var(--rift-dim)}
+a{color:inherit}
+
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+
+/* header */
+.eyebrow{color:var(--muted2);font-size:.74rem;text-transform:uppercase;letter-spacing:.16em;font-weight:600}
+.title{font-size:2rem;margin-top:6px}
+.subtitle{color:var(--muted);max-width:60ch;margin-top:10px;font-size:.95rem}
+
+/* rank ladder */
+.rankrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.rankchip{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface);min-width:82px}
+.rankchip b{font-family:'Cinzel';font-size:1rem}
+.rankchip span{font-size:.7rem;color:var(--muted)}
+
+/* nav */
+.nav{position:sticky;top:0;z-index:5;display:flex;gap:4px;flex-wrap:wrap;background:linear-gradient(180deg,var(--ink) 82%,transparent);padding:14px 0 10px;margin-top:26px}
+.nav a{font-size:.82rem;color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:7px;border:1px solid var(--line);background:var(--surface)}
+.nav a:hover{color:var(--text);border-color:var(--rift)}
+
+section{margin-top:40px;scroll-margin-top:64px}
+section h2{font-size:1.4rem;color:var(--rift)}
+section .lede{color:var(--muted);font-size:.88rem;margin-top:6px;max-width:64ch}
+
+/* generic */
+.grid{display:grid;gap:12px;margin-top:18px}
+.g5{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.g3{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.g2{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.small{font-size:.78rem}
+.muted{color:var(--muted)}
+
+/* class filter */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.filters button{font-family:inherit;cursor:pointer;background:var(--surface);border:1px solid var(--line);color:var(--muted);padding:7px 14px;border-radius:20px;font-size:.82rem;font-weight:500}
+.filters button.active{color:var(--ink);background:var(--rift);border-color:var(--rift);font-weight:600}
+.classcount{color:var(--muted2);font-size:.76rem;margin-top:8px}
+
+/* class card */
+.classcard{border:1px solid var(--line);border-left:3px solid var(--line);border-radius:10px;padding:12px;background:var(--surface2)}
+.classcard .row{display:flex;align-items:center;gap:8px}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:.68rem;font-weight:700;color:#100e16;flex:none}
+.classcard .name{font-weight:600;font-size:.92rem}
+.classcard .ranktag{font-size:.68rem;font-weight:700;letter-spacing:.05em}
+.classcard .flavor{font-style:italic;color:var(--muted);font-size:.78rem;margin-top:6px}
+.classcard .ability{font-size:.78rem;margin-top:6px;font-weight:500}
+.classcard .ratios{font-size:.7rem;color:var(--muted2);margin-top:6px}
+
+/* skill tree */
+.rolehead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.rolehead .name{font-size:1.05rem}
+.tierlabel{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted2);margin:12px 0 6px}
+.skirow{display:flex;gap:8px;flex-wrap:wrap}
+.skill{flex:1;min-width:150px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface3)}
+.skill .sn{font-weight:600;font-size:.82rem}
+.skill .req{font-size:.68rem;color:var(--muted2);margin-top:4px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;margin-top:14px;font-size:.85rem}
+th{text-align:left;color:var(--muted2);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.tablewrap table{margin-top:0}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+.namepool{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.namepool span{background:var(--surface2);border:1px solid var(--line);border-radius:20px;padding:4px 11px;font-size:.78rem}
+
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted2);font-size:.76rem}
+
+@media(max-width:640px){.wrap{padding:20px 14px 60px}}
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">Guilds System · Reference</div>
+  <h1 class="title">Compendium</h1>
+  <p class="subtitle">Everything currently live in the game: the rank ladder every pull draws from, all 50 hero &amp; Champion classes, the five skill trees, party abilities, relics and items, monster and hazard pools, the Guild Management tree, the three Rift tiers, and Endless Rift.</p>
+
+  <div class="rankrow" id="rankRow"></div>
+
+  <nav class="nav">
+    <a href="#classes">Classes</a>
+    <a href="#skilltrees">Skill Trees</a>
+    <a href="#abilities">Party Abilities</a>
+    <a href="#relics">Relics &amp; Items</a>
+    <a href="#bestiary">Monsters &amp; Hazards</a>
+    <a href="#upgrades">Guild Upgrades</a>
+    <a href="#tiers">Rift Tiers</a>
+    <a href="#endless">Endless Rift</a>
+  </nav>
+
+  <section id="classes">
+    <h2>Classes</h2>
+    <p class="lede">50 classes across five categories. Every hero recruit and every Champion pull draws from this same pool — category decides which skill tree (below) a recruited hero levels into; rank sets its stat multiplier and how strong its innate signature ability rolls. Every class also carries one of five elemental types (Ember/Frost/Verdant/Umbral/Arcane), tying it to the Relic system below. The ability values shown below are Champion strength — a recruited hero's copy of the same innate rolls at 60% of it, since a hero also earns a full skill tree on top and a Champion doesn't.</p>
+    <p class="lede"><b style="color:var(--text)">Evolution</b> — a Level 10 roster hero can spend Crystals to reforge into the next-rank class within its own role (e.g. a Rank F Squire → Rank E Duelist), rescaling its stats and swapping its innate, flavor and elemental type while keeping all accumulated level/skill progress. Cards marked "Max evolution" above sit at the top of their role's ladder.</p>
+    <div class="filters" id="classFilters"></div>
+    <div class="classcount" id="classCount"></div>
+    <div class="grid g5" id="classGrid"></div>
+  </section>
+
+  <section id="skilltrees">
+    <h2>Skill Trees</h2>
+    <p class="lede">A recruited hero's category decides its tree. Every tree shares the same shape — two generic Tier-1 nodes, two category-flavored Tier-2 nodes, one capstone requiring both — so only the flavor changes per category.</p>
+    <div class="grid g2" id="skillTrees"></div>
+  </section>
+
+  <section id="abilities">
+    <h2>Party Abilities</h2>
+    <p class="lede">One free tactical choice before every Engage — unlocked the moment any hero of that role in the party reaches Level 3. Reusable every fight (not consumed permanently), but only one per fight.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Role</th><th>Ability</th><th>Effect</th></tr>
+      <tr><td>Warrior</td><td><b>Rally</b></td><td>+30% team damage for the whole fight — the sustained pick.</td></tr>
+      <tr><td>Ranger</td><td><b>Piercing Volley</b></td><td>-40% the monster's damage for the whole fight — a defensive/clutch pick.</td></tr>
+      <tr><td>Mage</td><td><b>Overcharge</b></td><td>An immediate free burst of damage before the fight begins — strongest vs. short fights.</td></tr>
+      <tr><td>Cleric</td><td><b>Blessing</b></td><td>Fully heals the party before the fight begins — wasted if already at full HP.</td></tr>
+      <tr><td>Rogue</td><td><b>Ambush</b></td><td>+90% first-round damage only — the burst pick, best against fast kills.</td></tr>
+    </table></div>
+    <p class="small muted" style="margin-top:8px">Rally and Ambush are deliberately asymmetric: Rally wins on long fights (flat bonus every round), Ambush wins on short ones (a much bigger one-round spike). Neither strictly dominates the other.</p>
+  </section>
+
+  <section id="relics">
+    <h2>Relics &amp; Items</h2>
+    <p class="lede">Found in Rift shops, as combat rewards, or as a starting pick from Relic Storage. Independent of hero/Champion rank — relics keep their own three-tier rarity.</p>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Rarity tiers</h3>
+    <div class="tablewrap"><table>
+      <tr><th>Rarity</th><th>Stat Multiplier</th><th>Base Cost</th><th>Pull Weight</th></tr>
+      <tr><td><span class="dot" style="background:var(--muted)"></span>Common</td><td class="mono">×1.0</td><td class="mono">40c</td><td class="mono">60</td></tr>
+      <tr><td><span class="dot" style="background:var(--crystal)"></span>Rare</td><td class="mono">×1.4</td><td class="mono">120c</td><td class="mono">32</td></tr>
+      <tr><td><span class="dot" style="background:var(--gold)"></span>Epic</td><td class="mono">×1.9</td><td class="mono">320c</td><td class="mono">8</td></tr>
+    </table></div>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Elemental types &amp; synergy</h3>
+    <p class="small muted">Every relic rolls one of five types + a noun (Sigil, Charm, Shard, Idol, Emblem). With Optimal Synergy unlocked, equipping 3+ of the same type grants that type's bonus below — matching a party hero's own elemental type to an equipped relic type adds a further +3% team damage per matched type (Affinity).</p>
+    <div class="tablewrap"><table>
+      <tr><th>Type</th><th>3-of-a-kind Synergy Bonus</th></tr>
+      <tr><td>Ember</td><td class="mono">+15% team damage</td></tr>
+      <tr><td>Frost</td><td class="mono">+12% dodge chance</td></tr>
+      <tr><td>Verdant</td><td class="mono">Mends 8% of the party's HP pool each round</td></tr>
+      <tr><td>Umbral</td><td class="mono">-15% hazard severity</td></tr>
+      <tr><td>Arcane</td><td class="mono">+4% damage/round (stacking)</td></tr>
+    </table></div>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Special effects (40% chance per relic)</h3>
+    <div class="tablewrap"><table>
+      <tr><th>Effect</th><th>Base Value</th></tr>
+      <tr><td>Mends HP each round</td><td class="mono">2%</td></tr>
+      <tr><td>Dodge chance</td><td class="mono">+5%</td></tr>
+      <tr><td>Escalating damage (stacking)</td><td class="mono">+1.5%/round</td></tr>
+      <tr><td>Hazard severity reduction</td><td class="mono">-6%</td></tr>
+      <tr><td>First-strike damage</td><td class="mono">+6%</td></tr>
+      <tr><td>Survive a wipe at % HP (once/rift)</td><td class="mono">8%</td></tr>
+      <tr><td>Boss opening-volley damage</td><td class="mono">+30%</td></tr>
+    </table></div>
+    <p class="small muted" style="margin-top:8px">Special-effect relics roll slightly lower base stats (+2 DMG / +6 Shield vs. +3 / +9) to offset the extra effect. All values scale with the relic's rarity multiplier above.</p>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Relic upgrades</h3>
+    <p class="small muted">Any owned relic can be spent Crystals on to level up (max level 5) at the Rift Auction — each level adds +15% to its DMG, Shield, and special-effect value. Cost is <span class="mono">15 × rarity multiplier × current level</span> Crystals.</p>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Rift Detectors</h3>
+    <p class="small muted">A rare drop from sealing a Rift (chance scales with Detector Tuning). Sold at the Rift Auction for Coins, or consumed for a Shop Boost — guarantees an Epic Relic on the next Rift's shop node instead. Base sale price: 80c (Lesser tier) / 200c (Greater) / 450c (Ascendant), plus a 30% bonus with Black Market Clearance.</p>
+  </section>
+
+  <section id="bestiary">
+    <h2>Monsters &amp; Hazards</h2>
+    <p class="lede">Regular encounters, Elites, and Rift Bosses draw from separate name pools and scale with floor depth. Every Boss additionally rolls one mechanic, revealed before you engage.</p>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Regular encounters</h3>
+    <div class="namepool" id="monsterPool"></div>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Elite encounters <span class="muted" style="font-weight:400">— ×1.45 HP, ×1.3 DMG, ×1.4 loot</span></h3>
+    <div class="namepool" id="elitePool"></div>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Rift Bosses <span class="muted" style="font-weight:400">— ×1.8 HP, ×1.5 DMG</span></h3>
+    <div class="namepool" id="bossPool"></div>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Boss mechanics <span class="muted" style="font-weight:400">— one rolled per Boss fight</span></h3>
+    <div class="tablewrap"><table>
+      <tr><th>Mechanic</th><th>Effect</th></tr>
+      <tr><td><b>Enraged</b></td><td>Strikes harder the longer the fight drags on (past round 4).</td></tr>
+      <tr><td><b>Warded</b></td><td>Shields and dodge cannot mitigate its first two retaliations.</td></tr>
+      <tr><td><b>Regenerating</b></td><td>Heals a portion of its health back each round it survives.</td></tr>
+      <tr><td><b>Frenzied</b></td><td>Hits harder than expected from the very first round.</td></tr>
+    </table></div>
+
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Hazards <span class="muted" style="font-weight:400">— one rolled per hazard node</span></h3>
+    <div class="tablewrap"><table>
+      <tr><th>Hazard</th><th>Severity</th><th>Bonus chance</th><th>Bonus type</th></tr>
+      <tr><td>Poison Fog</td><td class="mono">×1.0</td><td class="mono">30%</td><td>Crystals</td></tr>
+      <tr><td>Cracked Lava Floor</td><td class="mono">×1.3</td><td class="mono">15%</td><td>Crystals</td></tr>
+      <tr><td>Collapsing Passage</td><td class="mono">×1.1</td><td class="mono">20%</td><td>Coins</td></tr>
+      <tr><td>Wailing Wraiths</td><td class="mono">×0.8</td><td class="mono">40%</td><td>Crystals</td></tr>
+      <tr><td>Sealed Vault Trap</td><td class="mono">×1.2</td><td class="mono">50%</td><td>Coins</td></tr>
+    </table></div>
+  </section>
+
+  <section id="upgrades">
+    <h2>Guild Upgrades</h2>
+    <p class="lede">Four branches, four nodes each, funded with Crystals from the Guild Terminal's Management tab. Most nodes cap with a one-time capstone skill.</p>
+    <div class="grid g4" id="branchGrid"></div>
+  </section>
+
+  <section id="tiers">
+    <h2>Rift Tiers</h2>
+    <p class="lede">Recommended power is a rough party-power benchmark shown at assembly — Ready / Risky / Dangerous against it.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Rift</th><th>Floors</th><th>Monster HP/DMG</th><th>Coin/Crystal per kill</th><th>Base Seal Tokens</th><th>Detector chance</th><th>Rec. Power</th></tr>
+      <tr><td style="color:var(--rift)">Lesser Rift</td><td class="mono">7</td><td class="mono">38 / 5</td><td class="mono">18-34 / 5-11</td><td class="mono">10</td><td class="mono">8%</td><td class="mono">70</td></tr>
+      <tr><td style="color:var(--rift)">Greater Rift</td><td class="mono">10</td><td class="mono">72 / 9</td><td class="mono">40-72 / 11-20</td><td class="mono">20</td><td class="mono">14%</td><td class="mono">150</td></tr>
+      <tr><td style="color:var(--rift)">Ascendant Rift</td><td class="mono">13</td><td class="mono">125 / 14</td><td class="mono">85-140 / 20-36</td><td class="mono">36</td><td class="mono">22%</td><td class="mono">280</td></tr>
+    </table></div>
+    <p class="small muted" style="margin-top:10px">Monster stats scale further per floor depth (+12% per floor), and rewards scale +5% per floor on top of the ranges above.</p>
+    <p class="small muted" style="margin-top:8px"><b style="color:var(--hazard)">Hardcore Mode</b> — an opt-in toggle at party assembly, available on any Rift tier. Coins, Crystals and Seal Tokens earned are ×1.5, but a wipe permanently removes every roster hero in that run's party (the Champion, being ephemeral, is unaffected either way).</p>
+  </section>
+
+  <section id="endless">
+    <h2>Endless Rift</h2>
+    <p class="lede">Unlocked from the start, no need to clear the three fixed tiers first. Starts at Ascendant's exact stats (Cycle 1) and multiplies everything — monster HP/DMG, coin/crystal ranges, base Seal Tokens, recommended power — by <span class="mono">1 + cycle × 0.35</span> every time you seal its boss. Ends only when you retreat or wipe; your best cycle reached is tracked permanently on the Rift Hall card.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Cycle</th><th>Scale</th><th>Monster HP/DMG</th><th>Rec. Power</th></tr>
+      <tr><td class="mono">1</td><td class="mono">×1.00</td><td class="mono">125 / 14</td><td class="mono">280</td></tr>
+      <tr><td class="mono">2</td><td class="mono">×1.35</td><td class="mono">169 / 19</td><td class="mono">378</td></tr>
+      <tr><td class="mono">3</td><td class="mono">×1.70</td><td class="mono">213 / 24</td><td class="mono">476</td></tr>
+      <tr><td class="mono">6</td><td class="mono">×2.75</td><td class="mono">344 / 39</td><td class="mono">770</td></tr>
+      <tr><td class="mono">11</td><td class="mono">×4.50</td><td class="mono">563 / 63</td><td class="mono">1260</td></tr>
+    </table></div>
+    <p class="small muted" style="margin-top:8px">The scaling is linear and unbounded by design — hero/guild power has a ceiling (level 10 cap, maxed skill trees, maxed Guild Management), so Endless is meant to eventually out-pace any roster. It's a depth-record chase, not a mode you're meant to "solve."</p>
+  </section>
+
+  <footer>Generated from the current Guilds System build — regenerate this page after balance or content changes so it stays accurate.</footer>
+</div>
+
+<script>
+const RANKS=[
+ {id:'F',weight:100,mult:.9,cost:25,color:'var(--rankF)'},
+ {id:'E',weight:60,mult:1.0,cost:45,color:'var(--rankE)'},
+ {id:'D',weight:35,mult:1.15,cost:75,color:'var(--rankD)'},
+ {id:'C',weight:20,mult:1.35,cost:130,color:'var(--rift)'},
+ {id:'B',weight:10,mult:1.6,cost:220,color:'var(--token)'},
+ {id:'A',weight:4,mult:2.0,cost:380,color:'var(--elite)'},
+ {id:'S',weight:1,mult:2.6,cost:650,color:'var(--rankS)'},
+];
+const RANK_COLOR=Object.fromEntries(RANKS.map(r=>[r.id,r.color]));
+const CHAMP_KIND_BASE={dmg_pct:.06,hp_pct:.06,first_round_pct:.15,escalate_pct:.02,mend_pct:.03,dodge_pct:.08,hazard_guard_pct:.10,wipe_guard:.2,boss_alpha_strike:1};
+const CLASSES={
+ warrior:{name:'Warrior',badge:'W',color:'var(--gold)'},
+ ranger:{name:'Ranger',badge:'R',color:'var(--rift)'},
+ mage:{name:'Mage',badge:'M',color:'var(--crystal)'},
+ cleric:{name:'Cleric',badge:'C',color:'var(--token)'},
+ rogue:{name:'Rogue',badge:'G',color:'var(--hazard)'},
+};
+const CLASS_POOL=[
+ {id:'squire',name:'Squire',role:'warrior',rank:'F',type:'Ember',hpRatio:1.0,dmgRatio:1.0,kind:'dmg_pct',flavor:'A guild recruit swinging a borrowed blade.'},
+ {id:'footman',name:'Footman',role:'warrior',rank:'F',type:'Umbral',hpRatio:1.2,dmgRatio:.8,kind:'hazard_guard_pct',flavor:'Slow, sturdy, and hard to put down.'},
+ {id:'duelist',name:'Duelist',role:'warrior',rank:'E',type:'Ember',hpRatio:.9,dmgRatio:1.1,kind:'first_round_pct',flavor:'Wins the exchange before it starts.'},
+ {id:'bulwark',name:'Bulwark',role:'warrior',rank:'E',type:'Umbral',hpRatio:1.3,dmgRatio:.7,kind:'hp_pct',flavor:'A wall with opinions.'},
+ {id:'berserker',name:'Berserker',role:'warrior',rank:'D',type:'Ember',hpRatio:.8,dmgRatio:1.3,kind:'dmg_pct',flavor:'Considers armor a personal insult.'},
+ {id:'iron-guard',name:'Iron Guard',role:'warrior',rank:'C',type:'Umbral',hpRatio:1.4,dmgRatio:.8,kind:'hp_pct',flavor:'Rift-forged plate, dented and unbothered.'},
+ {id:'bloodletter',name:'Bloodletter',role:'warrior',rank:'C',type:'Ember',hpRatio:.9,dmgRatio:1.3,kind:'escalate_pct',flavor:'Trades wounds and wins the trade.'},
+ {id:'runeblade',name:'Runeblade',role:'warrior',rank:'B',type:'Arcane',hpRatio:1.0,dmgRatio:1.2,kind:'first_round_pct',flavor:'Every strike is already inscribed.'},
+ {id:'ashen-templar',name:'Ashen Templar',role:'warrior',rank:'A',type:'Umbral',hpRatio:1.3,dmgRatio:1.0,kind:'wipe_guard',flavor:"Has died before. Didn't care for it."},
+ {id:'rift-sovereign',name:'Rift Sovereign',role:'warrior',rank:'S',type:'Arcane',hpRatio:1.1,dmgRatio:1.4,kind:'boss_alpha_strike',flavor:'The Rift answers to almost nothing. Almost.'},
+ {id:'trapper',name:'Trapper',role:'ranger',rank:'F',type:'Verdant',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:'Sets more snares than the Rift can spring.'},
+ {id:'slinger',name:'Slinger',role:'ranger',rank:'F',type:'Verdant',hpRatio:.9,dmgRatio:1.0,kind:'dmg_pct',flavor:"Improvises a weapon out of whatever's at hand."},
+ {id:'pathfinder',name:'Pathfinder',role:'ranger',rank:'E',type:'Verdant',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:"Already knows where the floor gives way."},
+ {id:'longshot',name:'Longshot',role:'ranger',rank:'E',type:'Frost',hpRatio:.8,dmgRatio:1.1,kind:'first_round_pct',flavor:'One arrow. Rarely needs a second.'},
+ {id:'blade-dancer',name:'Blade Dancer',role:'ranger',rank:'D',type:'Ember',hpRatio:.9,dmgRatio:1.1,kind:'first_round_pct',flavor:'The opening strike is the whole performance.'},
+ {id:'warden',name:'Warden',role:'ranger',rank:'D',type:'Verdant',hpRatio:1.1,dmgRatio:.9,kind:'hp_pct',flavor:'Has walked through worse hallways than this.'},
+ {id:'stormtracker',name:'Stormtracker',role:'ranger',rank:'D',type:'Frost',hpRatio:.9,dmgRatio:1.1,kind:'escalate_pct',flavor:"Follows the lightning instead of waiting for thunder."},
+ {id:'rift-ranger',name:'Rift Ranger',role:'ranger',rank:'C',type:'Arcane',hpRatio:1.0,dmgRatio:1.1,kind:'dodge_pct',flavor:'Reads a hallway before it reads back.'},
+ {id:'deadfall-hunter',name:'Deadfall Hunter',role:'ranger',rank:'C',type:'Verdant',hpRatio:.9,dmgRatio:1.0,kind:'hazard_guard_pct',flavor:'Sets the trap the Rift walks into instead.'},
+ {id:'voidwalker',name:'Voidwalker',role:'ranger',rank:'A',type:'Arcane',hpRatio:.9,dmgRatio:1.2,kind:'dodge_pct',flavor:'Half-stepped out of the fight before it began.'},
+ {id:'apprentice',name:'Apprentice',role:'mage',rank:'F',type:'Arcane',hpRatio:.8,dmgRatio:.9,kind:'escalate_pct',flavor:'Still learning to hold a spark steady.'},
+ {id:'cinderling',name:'Cinderling',role:'mage',rank:'F',type:'Ember',hpRatio:.8,dmgRatio:.9,kind:'dmg_pct',flavor:'Sparks first, thinks second.'},
+ {id:'fledgling-seer',name:'Fledgling Seer',role:'mage',rank:'F',type:'Arcane',hpRatio:.9,dmgRatio:.8,kind:'hazard_guard_pct',flavor:'Sees the trap a half-second before it triggers.'},
+ {id:'cinder-adept',name:'Cinder Adept',role:'mage',rank:'E',type:'Ember',hpRatio:.8,dmgRatio:1.0,kind:'escalate_pct',flavor:'Every spell warms up the next.'},
+ {id:'frost-scholar',name:'Frost Scholar',role:'mage',rank:'E',type:'Frost',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:"Studies the Rift's cold so it can't study back."},
+ {id:'wardweaver',name:'Wardweaver',role:'mage',rank:'D',type:'Arcane',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:'Weaves a ward faster than the Rift can break it.'},
+ {id:'stormcaller',name:'Stormcaller',role:'mage',rank:'C',type:'Frost',hpRatio:.8,dmgRatio:1.1,kind:'escalate_pct',flavor:'Calls down more with every passing second.'},
+ {id:'pyromancer',name:'Pyromancer',role:'mage',rank:'B',type:'Ember',hpRatio:.8,dmgRatio:1.2,kind:'dodge_pct',flavor:'The Rift itself seems to lean away.'},
+ {id:'archon-of-storms',name:'Archon of Storms',role:'mage',rank:'A',type:'Frost',hpRatio:1.0,dmgRatio:1.2,kind:'boss_alpha_strike',flavor:"Opens every Warden's door with thunder."},
+ {id:'the-unbound',name:'The Unbound',role:'mage',rank:'S',type:'Arcane',hpRatio:1.0,dmgRatio:1.3,kind:'escalate_pct',flavor:'No name holds it. No floor stops it.'},
+ {id:'peddler',name:'Peddler',role:'cleric',rank:'F',type:'Verdant',hpRatio:.9,dmgRatio:.8,kind:'mend_pct',flavor:'Sells bandages. Uses them too.'},
+ {id:'acolyte',name:'Acolyte',role:'cleric',rank:'F',type:'Arcane',hpRatio:1.0,dmgRatio:.8,kind:'mend_pct',flavor:'Prays quietly, heals quietly.'},
+ {id:'herbalist',name:'Herbalist',role:'cleric',rank:'E',type:'Verdant',hpRatio:1.0,dmgRatio:.8,kind:'mend_pct',flavor:'Carries a field kit for every wound.'},
+ {id:'lay-brother',name:'Lay Brother',role:'cleric',rank:'E',type:'Arcane',hpRatio:1.0,dmgRatio:.9,kind:'dmg_pct',flavor:"Swings a censer like it owes him money."},
+ {id:'battle-chaplain',name:'Battle Chaplain',role:'cleric',rank:'D',type:'Arcane',hpRatio:1.0,dmgRatio:.9,kind:'dodge_pct',flavor:'Prays loudly enough to keep the party moving.'},
+ {id:'zealot',name:'Zealot',role:'cleric',rank:'D',type:'Umbral',hpRatio:.9,dmgRatio:1.1,kind:'dmg_pct',flavor:'Faith, mostly. A blade, occasionally.'},
+ {id:'rift-medic',name:'Rift Medic',role:'cleric',rank:'C',type:'Verdant',hpRatio:1.0,dmgRatio:.9,kind:'mend_pct',flavor:'Faster hands than the Rift has wounds to give.'},
+ {id:'dawnkeeper',name:'Dawnkeeper',role:'cleric',rank:'B',type:'Arcane',hpRatio:1.1,dmgRatio:.9,kind:'hazard_guard_pct',flavor:'Carries first light into the deepest floor.'},
+ {id:'sanctified-shield',name:'Sanctified Shield',role:'cleric',rank:'B',type:'Arcane',hpRatio:1.3,dmgRatio:.9,kind:'wipe_guard',flavor:'Swears the party will not fall today.'},
+ {id:'alchemist',name:'Alchemist',role:'cleric',rank:'B',type:'Verdant',hpRatio:1.0,dmgRatio:1.0,kind:'escalate_pct',flavor:'Brews faster than the Rift can wound.'},
+ {id:'scavenger',name:'Scavenger',role:'rogue',rank:'F',type:'Umbral',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:"Knows which puddles not to step in."},
+ {id:'runaway',name:'Runaway',role:'rogue',rank:'F',type:'Umbral',hpRatio:.8,dmgRatio:.9,kind:'dodge_pct',flavor:'Has never once stood and fought fair.'},
+ {id:'cutpurse',name:'Cutpurse',role:'rogue',rank:'F',type:'Ember',hpRatio:.8,dmgRatio:1.0,kind:'dmg_pct',flavor:'Leaves with more than they came with.'},
+ {id:'skirmisher',name:'Skirmisher',role:'rogue',rank:'E',type:'Ember',hpRatio:.9,dmgRatio:1.0,kind:'dodge_pct',flavor:'Never where the last swing landed.'},
+ {id:'footpad',name:'Footpad',role:'rogue',rank:'E',type:'Frost',hpRatio:.8,dmgRatio:1.0,kind:'hazard_guard_pct',flavor:"Nobody's ever heard them arrive."},
+ {id:'shadowfoot',name:'Shadowfoot',role:'rogue',rank:'D',type:'Umbral',hpRatio:.8,dmgRatio:1.1,kind:'dodge_pct',flavor:'The Rift barely notices it was there.'},
+ {id:'fleetblade',name:'Fleetblade',role:'rogue',rank:'D',type:'Ember',hpRatio:.8,dmgRatio:1.0,kind:'escalate_pct',flavor:'Gets faster the longer no one catches them.'},
+ {id:'nightblade',name:'Nightblade',role:'rogue',rank:'C',type:'Umbral',hpRatio:.9,dmgRatio:1.1,kind:'dmg_pct',flavor:'Strikes from the dark and returns to it.'},
+ {id:'wraithstep',name:'Wraithstep',role:'rogue',rank:'C',type:'Umbral',hpRatio:.9,dmgRatio:1.1,kind:'first_round_pct',flavor:'Leaves two footprints and no explanation.'},
+ {id:'duskrunner',name:'Duskrunner',role:'rogue',rank:'B',type:'Umbral',hpRatio:.9,dmgRatio:1.2,kind:'first_round_pct',flavor:'Moves like the space between two heartbeats.'},
+];
+function evolutionTarget(cls){
+  const rankIdx=RANKS.findIndex(r=>r.id===cls.rank);
+  for(let i=rankIdx+1;i<RANKS.length;i++){
+    const next=CLASS_POOL.find(c=>c.role===cls.role&&c.rank===RANKS[i].id);
+    if(next)return next;
+  }
+  return null;
+}
+const CLASS_SKILLS={
+ warrior:[
+  {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.10,name:'Vanguard Strike',requires:['Honed Edge']},
+  {tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.10,name:'Shield Wall',requires:['Thick Hide']},
+  {tier:3,reqLevel:7,cost:2,kind:'wipe_guard',value:.25,name:'Last Stand',requires:['Vanguard Strike','Shield Wall']},
+ ],
+ ranger:[
+  {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.12,name:'Focused Shot',requires:['Honed Edge']},
+  {tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Light-Footed',requires:['Thick Hide']},
+  {tier:3,reqLevel:7,cost:2,kind:'first_round_pct',value:.35,name:'Dead Eye',requires:['Focused Shot','Light-Footed']},
+ ],
+ mage:[
+  {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Arcane Buildup',requires:['Honed Edge']},
+  {tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Ward Sigil',requires:['Thick Hide']},
+  {tier:3,reqLevel:7,cost:2,kind:'boss_alpha_strike',value:1,name:'Cataclysm',requires:['Arcane Buildup','Ward Sigil']},
+ ],
+ cleric:[
+  {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {tier:2,reqLevel:4,cost:1,kind:'dmg_pct',value:.10,name:'Smite',requires:['Honed Edge']},
+  {tier:2,reqLevel:4,cost:1,kind:'mend_pct',value:.05,name:'Mending Chant',requires:['Thick Hide']},
+  {tier:3,reqLevel:7,cost:2,kind:'mend_pct',value:.10,name:'Guardian Angel',requires:['Smite','Mending Chant']},
+ ],
+ rogue:[
+  {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Momentum',requires:['Honed Edge']},
+  {tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.12,name:'Evasion',requires:['Thick Hide']},
+  {tier:3,reqLevel:7,cost:2,kind:'dmg_pct',value:.20,name:'Shadow Strike',requires:['Momentum','Evasion']},
+ ],
+};
+const BRANCHES=[
+ {name:'Operations Branch',sub:'Hero Roster & Combat Management',nodes:[
+   {name:'Roster Expansion',max:5,effect:'+2 hero slots / level',cap:'Elite Barracks — set a Guild Mentor; new recruits join one level higher.'},
+   {name:'Medical Bay',max:5,effect:'-10% recovery time / level',cap:'Field Triage — once per rift cycle, instantly heal the whole team.'},
+   {name:'Tactical Drilling',max:5,effect:'+3% HP/DMG in Rifts / level',cap:"Vanguard Order — a fight's first strike deals +25% bonus damage."},
+   {name:'Trait Management Office',max:3,effect:'Scrub negative traits for Coins',cap:null},
+ ]},
+ {name:'Infrastructure Branch',sub:'Rift Efficiency & Yield',nodes:[
+   {name:'Crystal Amplifiers',max:5,effect:'+5% Crystal yield / level',cap:'Crystal Resonance — Rift Bosses drop a bonus Pure Crystal cache.'},
+   {name:'Rift Stabilization',max:5,effect:'-8% hazard severity / level',cap:"Anchor Artifact — negates each floor's first hazard entirely."},
+   {name:'Seal Maximizer',max:3,effect:'+10% Seal Tokens on a fast clear / level',cap:null},
+   {name:'Energy Extraction',max:5,effect:'+5% elite bonus-Crystal chance / level',cap:null},
+ ]},
+ {name:'Logistics Branch',sub:'Economy & Market',nodes:[
+   {name:'Broker Network',max:5,effect:'-3% Auction fees / level',cap:'Black Market Clearance — unlocks premium bids on ultra-rare Rift Detectors.'},
+   {name:'Targeted Scouting',max:3,effect:'HR filters unlocked',cap:'Headhunter — guarantees a Rank C+ hero in every HR refresh.'},
+   {name:'Merchant Contract',max:5,effect:'-5% shop prices / level',cap:null},
+   {name:'Detector Tuning',max:4,effect:'+5% Rift Detector drops / level',cap:null},
+ ]},
+ {name:'Research Branch',sub:'Run Mechanics & Analytics',nodes:[
+   {name:'Relic Storage',max:3,effect:'2/3/4 starting Relic choices',cap:'Inherited Power — start every Rift with a Rare Relic instead of Common.'},
+   {name:'Theorycrafting Lab',max:3,effect:'Damage dummy & synergy highlights unlocked',cap:'Optimal Synergy — 3 equipped Relics of one type grant that type\'s bonus (see Relics & Items).'},
+   {name:'Relic Recycling',max:3,effect:'Scrap unwanted Relics for Crystals',cap:null},
+   {name:'Arcane Cartography',max:3,effect:'Reveals the rift path on entry',cap:null},
+   {name:'Relic Vault',max:2,effect:'+1 equipped Relic slot / level',cap:null},
+ ]},
+];
+const MONSTER_NAMES=['Gloom Stalker','Rift Wisp','Husk Brute','Sable Fang','Ember Whelp','Marrow Crawler','Hollow Reaver','Cinder Moth'];
+const ELITE_NAMES=['Warbound Elite','Blightfang Elite','Rift-Touched Colossus','Iron Revenant','Storm-Called Elite','Ashen Broodlord'];
+const BOSS_NAMES=['Vaelith','Korrath','Nyxara','Drevok','Sythrane'];
+
+function innateValueFor(kind,rankIdx){return kind==='boss_alpha_strike'?1:CHAMP_KIND_BASE[kind]*(1+rankIdx*.18);}
+function describeAbility(kind,value){
+  const pct=Math.round(value*100);
+  switch(kind){
+    case'dmg_pct':return`+${pct}% damage`;
+    case'hp_pct':return`+${pct}% HP`;
+    case'first_round_pct':return`+${pct}% first-strike damage`;
+    case'escalate_pct':return`+${pct}% damage per round (stacking)`;
+    case'mend_pct':return`Mends ${pct}% of the party's HP pool each round`;
+    case'hazard_guard_pct':return`-${pct}% hazard severity`;
+    case'dodge_pct':return`${pct}% chance to block a retaliation`;
+    case'wipe_guard':return`Survive a wipe at ${pct}% HP (once per rift)`;
+    case'boss_alpha_strike':return'Opens every Boss fight with a free strike';
+    default:return'';
+  }
+}
+
+// -- rank ladder --
+document.getElementById('rankRow').innerHTML=RANKS.map(r=>`
+  <div class="rankchip" style="border-color:${r.color}">
+    <b style="color:${r.color}">Rank ${r.id}</b>
+    <span class="mono">weight ${r.weight} · ×${r.mult}</span>
+    <span class="mono">${r.cost}c to recruit</span>
+  </div>`).join('');
+
+// -- classes grid + filters --
+const CATS=['all','warrior','ranger','mage','cleric','rogue'];
+let activeCat='all';
+function renderClasses(){
+  const grid=document.getElementById('classGrid');
+  const list=CLASS_POOL.filter(c=>activeCat==='all'||c.role===activeCat);
+  document.getElementById('classCount').textContent=`${list.length} of ${CLASS_POOL.length} classes`;
+  grid.innerHTML=list.map(c=>{
+    const rankIdx=RANKS.findIndex(r=>r.id===c.rank);
+    const rank=RANKS[rankIdx];
+    const role=CLASSES[c.role];
+    const ability=describeAbility(c.kind,innateValueFor(c.kind,rankIdx));
+    const canEvolve=!!evolutionTarget(c);
+    return `<div class="classcard" style="border-left-color:${rank.color}">
+      <div class="row">
+        <span class="badge" style="background:${role.color}">${role.badge}</span>
+        <span class="name">${c.name}</span>
+      </div>
+      <div class="ranktag" style="color:${rank.color}">RANK ${c.rank} · ${role.name.toUpperCase()} · ${c.type.toUpperCase()}</div>
+      <div class="ability" style="color:${rank.color}">${ability}</div>
+      <div class="flavor">${c.flavor}</div>
+      <div class="ratios mono">HP ×${c.hpRatio.toFixed(1)} · DMG ×${c.dmgRatio.toFixed(1)}${canEvolve?' · Evolves →':' · Max evolution'}</div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('classFilters').innerHTML=CATS.map(cat=>{
+  const label=cat==='all'?'All':CLASSES[cat].name+'s';
+  return `<button data-cat="${cat}" class="${cat==='all'?'active':''}">${label}</button>`;
+}).join('');
+document.getElementById('classFilters').addEventListener('click',e=>{
+  const btn=e.target.closest('button');if(!btn)return;
+  activeCat=btn.dataset.cat;
+  document.querySelectorAll('#classFilters button').forEach(b=>b.classList.toggle('active',b===btn));
+  renderClasses();
+});
+renderClasses();
+
+// -- skill trees --
+document.getElementById('skillTrees').innerHTML=Object.keys(CLASS_SKILLS).map(roleId=>{
+  const role=CLASSES[roleId];
+  const nodes=CLASS_SKILLS[roleId];
+  const byTier=t=>nodes.filter(n=>n.tier===t);
+  const nodeHtml=n=>`<div class="skill">
+      <div class="sn">${n.name}</div>
+      <div class="small" style="margin-top:3px">${describeAbility(n.kind,n.value)}</div>
+      <div class="req">Lv${n.reqLevel} · ${n.cost} SP${n.requires.length?` · needs ${n.requires.join(' + ')}`:''}</div>
+    </div>`;
+  return `<div class="panel">
+    <div class="rolehead">
+      <span class="badge" style="background:${role.color};width:26px;height:26px;font-size:.8rem">${role.badge}</span>
+      <span class="name" style="font-family:'Cinzel'">${role.name}</span>
+    </div>
+    <div class="tierlabel">Tier 1</div>
+    <div class="skirow">${byTier(1).map(nodeHtml).join('')}</div>
+    <div class="tierlabel">Tier 2</div>
+    <div class="skirow">${byTier(2).map(nodeHtml).join('')}</div>
+    <div class="tierlabel">Capstone</div>
+    <div class="skirow">${byTier(3).map(nodeHtml).join('')}</div>
+  </div>`;
+}).join('');
+
+// -- guild upgrades --
+document.getElementById('branchGrid').innerHTML=BRANCHES.map(b=>`
+  <div class="panel">
+    <h3 style="font-size:.95rem;color:var(--rift)">${b.name}</h3>
+    <div class="small muted" style="margin-bottom:10px">${b.sub}</div>
+    ${b.nodes.map(n=>`
+      <div style="border-top:1px solid var(--line);padding-top:8px;margin-top:8px">
+        <div style="font-weight:600;font-size:.84rem">${n.name} <span class="muted" style="font-weight:400">(max ${n.max})</span></div>
+        <div class="small muted" style="margin-top:2px">${n.effect}</div>
+        ${n.cap?`<div class="small" style="color:var(--token);margin-top:4px">${n.cap}</div>`:''}
+      </div>`).join('')}
+  </div>`).join('');
+
+// -- monster pools --
+const poolHtml=arr=>arr.map(n=>`<span>${n}</span>`).join('');
+document.getElementById('monsterPool').innerHTML=poolHtml(MONSTER_NAMES);
+document.getElementById('elitePool').innerHTML=poolHtml(ELITE_NAMES);
+document.getElementById('bossPool').innerHTML=poolHtml(BOSS_NAMES);
+</script>

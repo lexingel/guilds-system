@@ -1,0 +1,1581 @@
+<title>Guilds System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ink:#15131c; --surface:#1e1a27; --surface2:#282232; --surface3:#332b40; --line:#3a3346;
+  --text:#ece7f4; --muted:#9a90ad; --muted2:#786e8e;
+  --rift:#3fe0a8; --rift-dim:rgba(63,224,168,.14);
+  --gold:#dba63f; --gold-dim:rgba(219,166,63,.14);
+  --crystal:#5fc7e8; --crystal-dim:rgba(95,199,232,.14);
+  --token:#b98ee0; --token-dim:rgba(185,142,224,.14);
+  --hazard:#e0654a; --hazard-dim:rgba(224,101,74,.14);
+  --elite:#e0954a; --elite-dim:rgba(224,149,74,.14);
+  --rankF:#8b8496; --rankE:#6fbf73; --rankD:#5fa8e8; --rankS:#f2c94c;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.45}
+h1,h2,h3{font-family:'Cinzel',Georgia,serif;text-wrap:balance;margin:0}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--rift);outline-offset:2px}
+::selection{background:var(--rift-dim)}
+
+#app{max-width:1080px;margin:0 auto;padding:20px 20px 60px}
+
+/* ---- header ---- */
+.topbar{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--ink) 78%,transparent);padding:14px 20px 10px;margin:0 -20px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.crest{width:34px;height:38px;background:var(--surface2);border:1px solid var(--line);clip-path:polygon(50% 0,100% 18%,100% 62%,50% 100%,0 62%,0 18%);display:flex;align-items:center;justify-content:center;font-family:'Cinzel';font-weight:700;color:var(--rift);flex:none}
+.guildname{display:flex;align-items:center;gap:10px}
+.guildname h1{font-size:1.15rem;letter-spacing:.02em}
+.guildname .tag{color:var(--muted2);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em}
+.resbar{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.82rem}
+.chip .dot{width:8px;height:8px;border-radius:50%}
+.chip b{font-family:'IBM Plex Mono';font-variant-numeric:tabular-nums}
+
+.tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{background:none;border:none;color:var(--muted);padding:9px 14px;font-size:.88rem;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--text);border-color:var(--rift)}
+.subtabs{display:flex;gap:6px;margin-bottom:16px}
+.subtab{background:var(--surface);border:1px solid var(--line);color:var(--muted);padding:6px 12px;border-radius:7px;font-size:.8rem}
+.subtab.active{color:var(--rift);border-color:var(--rift)}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--surface3);border:1px solid var(--line);padding:10px 16px;border-radius:9px;font-size:.85rem;opacity:0;transition:.25s;pointer-events:none;box-shadow:var(--shadow);z-index:20}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---- generic ---- */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.muted{color:var(--muted)}
+.small{font-size:.78rem}
+.btn{background:var(--surface3);border:1px solid var(--line);color:var(--text);padding:8px 14px;border-radius:8px;font-size:.84rem;font-weight:500;transition:.15s}
+.btn:hover{border-color:var(--rift)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--rift);color:#0c1712;border-color:var(--rift);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{border-color:var(--hazard);color:var(--hazard)}
+.btn.ghost{background:none}
+.bar{height:8px;border-radius:5px;background:var(--surface2);overflow:hidden;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:var(--rift)}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:.68rem;font-weight:700;color:#100e16}
+.pip-row{display:flex;gap:4px;margin:6px 0}
+.pip{width:14px;height:6px;border-radius:3px;background:var(--surface2);border:1px solid var(--line)}
+.pip.on{background:var(--rift);border-color:var(--rift)}
+
+/* ---- register ---- */
+.register{max-width:460px;margin:14vh auto 0;text-align:center}
+.register h1{font-size:1.8rem;margin-bottom:6px}
+.register input{width:100%;margin-top:18px;background:var(--surface);border:1px solid var(--line);color:var(--text);padding:12px 14px;border-radius:9px;font-size:1rem;font-family:'Cinzel'}
+
+/* ---- difficulty / hero cards ---- */
+.diffcard{cursor:pointer;transition:.15s}
+.diffcard:hover{border-color:var(--rift)}
+.diffcard h3{font-size:1rem;color:var(--rift)}
+.diffcard .rewards{display:flex;gap:10px;margin-top:8px;font-size:.76rem}
+
+.herocard{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface2);position:relative}
+.herocard.picked{outline:2px solid var(--rift)}
+.herocard.down{opacity:.5}
+.herocard .row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.herocard .name{font-weight:600;font-size:.9rem}
+.trait{font-size:.68rem;padding:2px 7px;border-radius:20px;display:inline-block;margin-top:4px}
+.trait.pos{background:var(--rift-dim);color:var(--rift)}
+.trait.neg{background:var(--hazard-dim);color:var(--hazard)}
+.trait.neu{background:var(--surface3);color:var(--muted)}
+
+/* ---- rift run ---- */
+.pathrow{display:flex;gap:8px;align-items:center;overflow-x:auto;padding:6px 2px 16px}
+.node-ic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-weight:600;font-size:.78rem;flex:none;border:2px solid var(--line);background:var(--surface2);color:var(--muted)}
+.node-ic.cur{border-color:var(--rift);color:var(--rift);box-shadow:0 0 0 4px var(--rift-dim)}
+.node-ic.past{opacity:.4}
+.node-ic.fork{border-style:dashed}
+.node-link{width:18px;height:2px;background:var(--line);flex:none}
+
+.combatants{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:12px}
+.monster{flex:1;min-width:200px}
+.monster h3{color:var(--hazard)}
+.party{flex:1;min-width:220px;display:flex;flex-direction:column;gap:8px}
+.mini-hero{display:flex;align-items:center;gap:8px;font-size:.8rem}
+.mini-hero .bar{flex:1}
+
+.log{background:#0e0c13;border:1px solid var(--line);border-radius:9px;padding:12px 14px;font-family:'IBM Plex Mono';font-size:.78rem;max-height:220px;overflow-y:auto;color:#c9c2d8}
+.log div+div{margin-top:4px}
+
+.shopitem{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface2)}
+.rtype{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted2)}
+
+.branch h3{font-size:.95rem;color:var(--rift);margin-bottom:2px}
+.branch .sub{font-size:.74rem;color:var(--muted2);margin-bottom:10px}
+.node{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:var(--surface2)}
+.node .nn{font-weight:600;font-size:.86rem}
+.cap{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.cap .cn{color:var(--token);font-weight:600;font-size:.82rem}
+
+.relicrow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.relicrow:last-child{border-bottom:none}
+
+/* ---- skill tree ---- */
+.skilltree{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.skirow{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.skill{flex:1;min-width:140px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface3)}
+.skill.owned{border-color:var(--rift);background:var(--rift-dim)}
+.skill.locked{opacity:.5}
+.skill .sn{font-weight:600;font-size:.8rem;margin-bottom:2px}
+.skill button{margin-top:6px}
+
+@media(max-width:640px){.topbar{padding:14px 14px 10px;margin:0 -14px 14px}#app{padding:14px 14px 50px}}
+</style>
+
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- data ---------------- */
+const CLASSES=[
+ {id:'warrior',name:'Warrior',baseHp:36,baseDmg:6,badge:'W',color:'var(--gold)'},
+ {id:'ranger',name:'Ranger',baseHp:27,baseDmg:8,badge:'R',color:'var(--rift)'},
+ {id:'mage',name:'Mage',baseHp:19,baseDmg:11,badge:'M',color:'var(--crystal)'},
+ {id:'cleric',name:'Cleric',baseHp:31,baseDmg:5,badge:'C',color:'var(--token)'},
+ {id:'rogue',name:'Rogue',baseHp:23,baseDmg:9,badge:'G',color:'var(--hazard)'},
+];
+/* Item/relic rarity only — heroes and Champions use the F-S RANKS scale below. */
+const RARITIES=[
+ {id:'common',name:'Common',mult:1.0,cost:40,weight:60,color:'var(--muted)'},
+ {id:'rare',name:'Rare',mult:1.4,cost:120,weight:32,color:'var(--crystal)'},
+ {id:'epic',name:'Epic',mult:1.9,cost:320,weight:8,color:'var(--gold)'},
+];
+const POS_TRAITS=['Battle-Hardened','Swift','Iron Skin'];
+const NEG_TRAITS=['Frail','Reckless','Slothful'];
+const TRAIT_TABLE={'Battle-Hardened':{dmg:.1},'Swift':{dmg:.05},'Iron Skin':{hp:.15},'Frail':{hp:-.15},'Reckless':{dmg:-.05,hp:-.05},'Slothful':{dmg:-.1}};
+const RELIC_TYPES=['Ember','Frost','Verdant','Umbral','Arcane'];
+const RELIC_SPECIALS=[
+ {kind:'mend_pct',value:.02,label:'Mends 2% HP/round'},
+ {kind:'dodge_pct',value:.05,label:'+5% dodge chance'},
+ {kind:'escalate_pct',value:.015,label:'+1.5% dmg/round (stacking)'},
+ {kind:'hazard_guard_pct',value:.06,label:'-6% hazard severity'},
+ {kind:'first_round_pct',value:.06,label:'+6% first-strike damage'},
+ {kind:'wipe_guard',value:.08,label:'Relic ward: survive a wipe at 8% HP'},
+ {kind:'boss_alpha_strike',value:.3,label:'+30% opening volley vs Bosses'},
+];
+/* Equipping 3+ of one element grants that element's own bonus instead of a
+   flat number — makes "which element am I building" a real choice. */
+const SYNERGY_BONUS={
+ Ember:{kind:'dmg_pct',value:.15,label:'+15% team damage'},
+ Frost:{kind:'dodge_pct',value:.12,label:'+12% dodge chance'},
+ Verdant:{kind:'mend_pct',value:.08,label:"Mends 8% of the party's HP pool each round"},
+ Umbral:{kind:'hazard_guard_pct',value:.15,label:'-15% hazard severity'},
+ Arcane:{kind:'escalate_pct',value:.04,label:'+4% dmg/round (stacking)'},
+};
+const BOSS_MECHANICS=[
+ {id:'enrage',name:'Enraged',desc:'Strikes harder the longer the fight drags on (past round 4).'},
+ {id:'warded',name:'Warded',desc:'Shields and dodge cannot mitigate its first two retaliations.'},
+ {id:'regen',name:'Regenerating',desc:'Heals a portion of its health back each round it survives.'},
+ {id:'frenzied',name:'Frenzied',desc:'Hits harder than expected from the very first round.'},
+];
+const HAZARD_TYPES=[
+ {id:'poison',name:'Poison Fog',desc:'A thick fog coils through the hallway, gnawing at exposed skin.',dmgMult:1,bonusChance:.3,bonusType:'crystals'},
+ {id:'lava',name:'Cracked Lava Floor',desc:'The floor glows and splits underfoot.',dmgMult:1.3,bonusChance:.15,bonusType:'crystals'},
+ {id:'collapse',name:'Collapsing Passage',desc:'Debris rains down as the ceiling gives way.',dmgMult:1.1,bonusChance:.2,bonusType:'coins'},
+ {id:'wraith',name:'Wailing Wraiths',desc:"Ghostly wails sap the party's resolve.",dmgMult:.8,bonusChance:.4,bonusType:'crystals'},
+ {id:'vault',name:'Sealed Vault Trap',desc:'A trapped vault door swings open, spilling treasure and shrapnel alike.',dmgMult:1.2,bonusChance:.5,bonusType:'coins'},
+];
+const FIRST_NAMES=['Aldric','Bryn','Coren','Dessa','Elowen','Fenwick','Gara','Hollis','Ianthe','Joric','Kestrel','Liora','Maren','Nyx','Oren','Petra','Quill','Roth','Sable','Tavin','Ysolde','Zeph'];
+const MONSTER_NAMES=['Gloom Stalker','Rift Wisp','Husk Brute','Sable Fang','Ember Whelp','Marrow Crawler','Hollow Reaver','Cinder Moth'];
+const ELITE_NAMES=['Warbound Elite','Blightfang Elite','Rift-Touched Colossus','Iron Revenant','Storm-Called Elite','Ashen Broodlord'];
+const BOSS_NAMES=['Vaelith','Korrath','Nyxara','Drevok','Sythrane'];
+const DIFFICULTIES=[
+ {id:'lesser',name:'Lesser Rift',floors:7,monsterHp:38,monsterDmg:5,coin:[18,34],crystal:[5,11],tokenBase:10,detectorChance:.08,power:'Low',recPower:70},
+ {id:'greater',name:'Greater Rift',floors:10,monsterHp:72,monsterDmg:9,coin:[40,72],crystal:[11,20],tokenBase:20,detectorChance:.14,power:'Medium',recPower:150},
+ {id:'ascendant',name:'Ascendant Rift',floors:13,monsterHp:125,monsterDmg:14,coin:[85,140],crystal:[20,36],tokenBase:36,detectorChance:.22,power:'High',recPower:280},
+];
+/* Endless Rift: unlocked from the start, scales forever off Ascendant's stats.
+   Ends only on retreat or a wipe — the long-term chase once the 3 fixed
+   tiers are cleared. */
+const ENDLESS_BASE={monsterHp:125,monsterDmg:14,coin:[85,140],crystal:[20,36],tokenBase:36,detectorChance:.22,recPower:280};
+function endlessDiffForCycle(cycle){
+  const mult=1+cycle*0.35;
+  return{
+    id:'endless',name:'Endless Rift',floors:6,power:'Extreme',
+    monsterHp:Math.round(ENDLESS_BASE.monsterHp*mult),monsterDmg:Math.round(ENDLESS_BASE.monsterDmg*mult),
+    coin:[Math.round(ENDLESS_BASE.coin[0]*mult),Math.round(ENDLESS_BASE.coin[1]*mult)],
+    crystal:[Math.round(ENDLESS_BASE.crystal[0]*mult),Math.round(ENDLESS_BASE.crystal[1]*mult)],
+    tokenBase:Math.round(ENDLESS_BASE.tokenBase*mult),detectorChance:ENDLESS_BASE.detectorChance,
+    recPower:Math.round(ENDLESS_BASE.recPower*mult),
+  };
+}
+function currentDiff(){return state.run.endless?endlessDiffForCycle(state.run.cycle||0):DIFFICULTIES.find(d=>d.id===state.run.diffId);}
+function pendingDiff(){return ui.pendingDiff==='endless'?endlessDiffForCycle(0):DIFFICULTIES.find(d=>d.id===ui.pendingDiff);}
+const NODE_ICON={combat:'C',elite:'E',shop:'$',hazard:'H',boss:'B'};
+const NODE_COLOR={combat:'var(--hazard)',elite:'var(--elite)',shop:'var(--gold)',hazard:'var(--token)',boss:'var(--rift)'};
+/* One party ability per fight — unlocked once any hero of that role in the
+   party is level 3+. A tactical choice made before every Engage. */
+const ABILITIES={
+ warrior:{name:'Rally',desc:'+30% team damage this fight.'},
+ ranger:{name:'Piercing Volley',desc:"-40% the monster's damage this fight."},
+ mage:{name:'Overcharge',desc:'An immediate burst of damage before the fight begins.'},
+ cleric:{name:'Blessing',desc:'Fully heals the party before the fight begins.'},
+ rogue:{name:'Ambush',desc:'Guarantees a critical first strike (+90% first-round damage).'},
+};
+function availableAbilities(party){
+  const roles=[...new Set(party.map(h=>h.clsId))];
+  return roles.filter(r=>ABILITIES[r]&&party.some(h=>h.clsId===r&&(h.level||1)>=3));
+}
+function selectAbility(role){ui.selectedAbility=ui.selectedAbility===role?null:role;render();}
+/* Every class shares the same tree shape: 2 generic Tier-1 nodes, 2 class-flavored
+   Tier-2 nodes, one capstone requiring both. Only the flavor differs per class. */
+const CLASS_SKILLS={
+ warrior:[
+  {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {id:'vanguard',tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.10,name:'Vanguard Strike',requires:['edge']},
+  {id:'shieldwall',tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.10,name:'Shield Wall',requires:['hide']},
+  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'wipe_guard',value:.25,name:'Last Stand',requires:['vanguard','shieldwall']},
+ ],
+ ranger:[
+  {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {id:'focus',tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.12,name:'Focused Shot',requires:['edge']},
+  {id:'lightfoot',tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Light-Footed',requires:['hide']},
+  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'first_round_pct',value:.35,name:'Dead Eye',requires:['focus','lightfoot']},
+ ],
+ mage:[
+  {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {id:'buildup',tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Arcane Buildup',requires:['edge']},
+  {id:'ward',tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Ward Sigil',requires:['hide']},
+  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'boss_alpha_strike',value:1,name:'Cataclysm',requires:['buildup','ward']},
+ ],
+ cleric:[
+  {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {id:'smite',tier:2,reqLevel:4,cost:1,kind:'dmg_pct',value:.10,name:'Smite',requires:['edge']},
+  {id:'mending',tier:2,reqLevel:4,cost:1,kind:'mend_pct',value:.05,name:'Mending Chant',requires:['hide']},
+  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'mend_pct',value:.10,name:'Guardian Angel',requires:['smite','mending']},
+ ],
+ rogue:[
+  {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
+  {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
+  {id:'momentum',tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Momentum',requires:['edge']},
+  {id:'evasion',tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.12,name:'Evasion',requires:['hide']},
+  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'dmg_pct',value:.20,name:'Shadow Strike',requires:['momentum','evasion']},
+ ],
+};
+/* Champion system: every rift roll grants a one-run guest fighter drawn from
+   a big F-S ranked class pool. Rank sets the weight (how often it's drawn),
+   the stat multiplier, and how strong its signature effect rolls — the
+   signature itself reuses the same kind vocabulary as skills/relics. */
+const RANKS=[
+ {id:'F',weight:100,mult:.9,cost:25},
+ {id:'E',weight:60,mult:1.0,cost:45},
+ {id:'D',weight:35,mult:1.15,cost:75},
+ {id:'C',weight:20,mult:1.35,cost:130},
+ {id:'B',weight:10,mult:1.6,cost:220},
+ {id:'A',weight:4,mult:2.0,cost:380},
+ {id:'S',weight:1,mult:2.6,cost:650},
+];
+const RANK_COLOR={F:'var(--rankF)',E:'var(--rankE)',D:'var(--rankD)',C:'var(--rift)',B:'var(--token)',A:'var(--elite)',S:'var(--rankS)'};
+const CHAMP_KIND_BASE={dmg_pct:.06,hp_pct:.06,first_round_pct:.15,escalate_pct:.02,mend_pct:.03,dodge_pct:.08,hazard_guard_pct:.10,wipe_guard:.2,boss_alpha_strike:1};
+/* 50 classes grouped into the 5 existing role categories (warrior/ranger/mage/
+   cleric/rogue) — 10 per category. `role` picks which CLASS_SKILLS tree and
+   CLASSES badge/stat-archetype a recruited hero uses; rank/kind/flavor are
+   the same F-S gacha vocabulary the Champion pool already uses. Both heroes
+   and Champions draw from this one pool. */
+const CLASS_POOL=[
+ // -- Warrior category (melee bruisers & tanks) --
+ {id:'squire',name:'Squire',role:'warrior',rank:'F',type:'Ember',hpRatio:1.0,dmgRatio:1.0,kind:'dmg_pct',flavor:'A guild recruit swinging a borrowed blade.'},
+ {id:'footman',name:'Footman',role:'warrior',rank:'F',type:'Umbral',hpRatio:1.2,dmgRatio:.8,kind:'hazard_guard_pct',flavor:'Slow, sturdy, and hard to put down.'},
+ {id:'duelist',name:'Duelist',role:'warrior',rank:'E',type:'Ember',hpRatio:.9,dmgRatio:1.1,kind:'first_round_pct',flavor:'Wins the exchange before it starts.'},
+ {id:'bulwark',name:'Bulwark',role:'warrior',rank:'E',type:'Umbral',hpRatio:1.3,dmgRatio:.7,kind:'hp_pct',flavor:'A wall with opinions.'},
+ {id:'berserker',name:'Berserker',role:'warrior',rank:'D',type:'Ember',hpRatio:.8,dmgRatio:1.3,kind:'dmg_pct',flavor:'Considers armor a personal insult.'},
+ {id:'iron-guard',name:'Iron Guard',role:'warrior',rank:'C',type:'Umbral',hpRatio:1.4,dmgRatio:.8,kind:'hp_pct',flavor:'Rift-forged plate, dented and unbothered.'},
+ {id:'bloodletter',name:'Bloodletter',role:'warrior',rank:'C',type:'Ember',hpRatio:.9,dmgRatio:1.3,kind:'escalate_pct',flavor:'Trades wounds and wins the trade.'},
+ {id:'runeblade',name:'Runeblade',role:'warrior',rank:'B',type:'Arcane',hpRatio:1.0,dmgRatio:1.2,kind:'first_round_pct',flavor:'Every strike is already inscribed.'},
+ {id:'ashen-templar',name:'Ashen Templar',role:'warrior',rank:'A',type:'Umbral',hpRatio:1.3,dmgRatio:1.0,kind:'wipe_guard',flavor:"Has died before. Didn't care for it."},
+ {id:'rift-sovereign',name:'Rift Sovereign',role:'warrior',rank:'S',type:'Arcane',hpRatio:1.1,dmgRatio:1.4,kind:'boss_alpha_strike',flavor:'The Rift answers to almost nothing. Almost.'},
+ // -- Ranger category (precision & terrain reading) --
+ {id:'trapper',name:'Trapper',role:'ranger',rank:'F',type:'Verdant',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:'Sets more snares than the Rift can spring.'},
+ {id:'slinger',name:'Slinger',role:'ranger',rank:'F',type:'Verdant',hpRatio:.9,dmgRatio:1.0,kind:'dmg_pct',flavor:"Improvises a weapon out of whatever's at hand."},
+ {id:'pathfinder',name:'Pathfinder',role:'ranger',rank:'E',type:'Verdant',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:"Already knows where the floor gives way."},
+ {id:'longshot',name:'Longshot',role:'ranger',rank:'E',type:'Frost',hpRatio:.8,dmgRatio:1.1,kind:'first_round_pct',flavor:'One arrow. Rarely needs a second.'},
+ {id:'blade-dancer',name:'Blade Dancer',role:'ranger',rank:'D',type:'Ember',hpRatio:.9,dmgRatio:1.1,kind:'first_round_pct',flavor:'The opening strike is the whole performance.'},
+ {id:'warden',name:'Warden',role:'ranger',rank:'D',type:'Verdant',hpRatio:1.1,dmgRatio:.9,kind:'hp_pct',flavor:'Has walked through worse hallways than this.'},
+ {id:'stormtracker',name:'Stormtracker',role:'ranger',rank:'D',type:'Frost',hpRatio:.9,dmgRatio:1.1,kind:'escalate_pct',flavor:"Follows the lightning instead of waiting for thunder."},
+ {id:'rift-ranger',name:'Rift Ranger',role:'ranger',rank:'C',type:'Arcane',hpRatio:1.0,dmgRatio:1.1,kind:'dodge_pct',flavor:'Reads a hallway before it reads back.'},
+ {id:'deadfall-hunter',name:'Deadfall Hunter',role:'ranger',rank:'C',type:'Verdant',hpRatio:.9,dmgRatio:1.0,kind:'hazard_guard_pct',flavor:'Sets the trap the Rift walks into instead.'},
+ {id:'voidwalker',name:'Voidwalker',role:'ranger',rank:'A',type:'Arcane',hpRatio:.9,dmgRatio:1.2,kind:'dodge_pct',flavor:'Half-stepped out of the fight before it began.'},
+ // -- Mage category (escalating & warding casters) --
+ {id:'apprentice',name:'Apprentice',role:'mage',rank:'F',type:'Arcane',hpRatio:.8,dmgRatio:.9,kind:'escalate_pct',flavor:'Still learning to hold a spark steady.'},
+ {id:'cinderling',name:'Cinderling',role:'mage',rank:'F',type:'Ember',hpRatio:.8,dmgRatio:.9,kind:'dmg_pct',flavor:'Sparks first, thinks second.'},
+ {id:'fledgling-seer',name:'Fledgling Seer',role:'mage',rank:'F',type:'Arcane',hpRatio:.9,dmgRatio:.8,kind:'hazard_guard_pct',flavor:'Sees the trap a half-second before it triggers.'},
+ {id:'cinder-adept',name:'Cinder Adept',role:'mage',rank:'E',type:'Ember',hpRatio:.8,dmgRatio:1.0,kind:'escalate_pct',flavor:'Every spell warms up the next.'},
+ {id:'frost-scholar',name:'Frost Scholar',role:'mage',rank:'E',type:'Frost',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:"Studies the Rift's cold so it can't study back."},
+ {id:'wardweaver',name:'Wardweaver',role:'mage',rank:'D',type:'Arcane',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:'Weaves a ward faster than the Rift can break it.'},
+ {id:'stormcaller',name:'Stormcaller',role:'mage',rank:'C',type:'Frost',hpRatio:.8,dmgRatio:1.1,kind:'escalate_pct',flavor:'Calls down more with every passing second.'},
+ {id:'pyromancer',name:'Pyromancer',role:'mage',rank:'B',type:'Ember',hpRatio:.8,dmgRatio:1.2,kind:'dodge_pct',flavor:'The Rift itself seems to lean away.'},
+ {id:'archon-of-storms',name:'Archon of Storms',role:'mage',rank:'A',type:'Frost',hpRatio:1.0,dmgRatio:1.2,kind:'boss_alpha_strike',flavor:"Opens every Warden's door with thunder."},
+ {id:'the-unbound',name:'The Unbound',role:'mage',rank:'S',type:'Arcane',hpRatio:1.0,dmgRatio:1.3,kind:'escalate_pct',flavor:'No name holds it. No floor stops it.'},
+ // -- Cleric category (sustain & support) --
+ {id:'peddler',name:'Peddler',role:'cleric',rank:'F',type:'Verdant',hpRatio:.9,dmgRatio:.8,kind:'mend_pct',flavor:'Sells bandages. Uses them too.'},
+ {id:'acolyte',name:'Acolyte',role:'cleric',rank:'F',type:'Arcane',hpRatio:1.0,dmgRatio:.8,kind:'mend_pct',flavor:'Prays quietly, heals quietly.'},
+ {id:'herbalist',name:'Herbalist',role:'cleric',rank:'E',type:'Verdant',hpRatio:1.0,dmgRatio:.8,kind:'mend_pct',flavor:'Carries a field kit for every wound.'},
+ {id:'lay-brother',name:'Lay Brother',role:'cleric',rank:'E',type:'Arcane',hpRatio:1.0,dmgRatio:.9,kind:'dmg_pct',flavor:"Swings a censer like it owes him money."},
+ {id:'battle-chaplain',name:'Battle Chaplain',role:'cleric',rank:'D',type:'Arcane',hpRatio:1.0,dmgRatio:.9,kind:'dodge_pct',flavor:'Prays loudly enough to keep the party moving.'},
+ {id:'zealot',name:'Zealot',role:'cleric',rank:'D',type:'Umbral',hpRatio:.9,dmgRatio:1.1,kind:'dmg_pct',flavor:'Faith, mostly. A blade, occasionally.'},
+ {id:'rift-medic',name:'Rift Medic',role:'cleric',rank:'C',type:'Verdant',hpRatio:1.0,dmgRatio:.9,kind:'mend_pct',flavor:'Faster hands than the Rift has wounds to give.'},
+ {id:'dawnkeeper',name:'Dawnkeeper',role:'cleric',rank:'B',type:'Arcane',hpRatio:1.1,dmgRatio:.9,kind:'hazard_guard_pct',flavor:'Carries first light into the deepest floor.'},
+ {id:'sanctified-shield',name:'Sanctified Shield',role:'cleric',rank:'B',type:'Arcane',hpRatio:1.3,dmgRatio:.9,kind:'wipe_guard',flavor:'Swears the party will not fall today.'},
+ {id:'alchemist',name:'Alchemist',role:'cleric',rank:'B',type:'Verdant',hpRatio:1.0,dmgRatio:1.0,kind:'escalate_pct',flavor:'Brews faster than the Rift can wound.'},
+ // -- Rogue category (evasion & burst) --
+ {id:'scavenger',name:'Scavenger',role:'rogue',rank:'F',type:'Umbral',hpRatio:.9,dmgRatio:.9,kind:'hazard_guard_pct',flavor:"Knows which puddles not to step in."},
+ {id:'runaway',name:'Runaway',role:'rogue',rank:'F',type:'Umbral',hpRatio:.8,dmgRatio:.9,kind:'dodge_pct',flavor:'Has never once stood and fought fair.'},
+ {id:'cutpurse',name:'Cutpurse',role:'rogue',rank:'F',type:'Ember',hpRatio:.8,dmgRatio:1.0,kind:'dmg_pct',flavor:'Leaves with more than they came with.'},
+ {id:'skirmisher',name:'Skirmisher',role:'rogue',rank:'E',type:'Ember',hpRatio:.9,dmgRatio:1.0,kind:'dodge_pct',flavor:'Never where the last swing landed.'},
+ {id:'footpad',name:'Footpad',role:'rogue',rank:'E',type:'Frost',hpRatio:.8,dmgRatio:1.0,kind:'hazard_guard_pct',flavor:"Nobody's ever heard them arrive."},
+ {id:'shadowfoot',name:'Shadowfoot',role:'rogue',rank:'D',type:'Umbral',hpRatio:.8,dmgRatio:1.1,kind:'dodge_pct',flavor:'The Rift barely notices it was there.'},
+ {id:'fleetblade',name:'Fleetblade',role:'rogue',rank:'D',type:'Ember',hpRatio:.8,dmgRatio:1.0,kind:'escalate_pct',flavor:'Gets faster the longer no one catches them.'},
+ {id:'nightblade',name:'Nightblade',role:'rogue',rank:'C',type:'Umbral',hpRatio:.9,dmgRatio:1.1,kind:'dmg_pct',flavor:'Strikes from the dark and returns to it.'},
+ {id:'wraithstep',name:'Wraithstep',role:'rogue',rank:'C',type:'Umbral',hpRatio:.9,dmgRatio:1.1,kind:'first_round_pct',flavor:'Leaves two footprints and no explanation.'},
+ {id:'duskrunner',name:'Duskrunner',role:'rogue',rank:'B',type:'Umbral',hpRatio:.9,dmgRatio:1.2,kind:'first_round_pct',flavor:'Moves like the space between two heartbeats.'},
+];
+/* Evolution: at max level, a hero can reforge into the next-rank class within
+   its own role (crystals cost). Preserves accumulated level growth by scaling
+   the ratio/rank-mult delta rather than resetting stats. */
+function evolutionTarget(cls){
+  const rankIdx=RANKS.findIndex(r=>r.id===cls.rank);
+  for(let i=rankIdx+1;i<RANKS.length;i++){
+    const next=CLASS_POOL.find(c=>c.role===cls.role&&c.rank===RANKS[i].id);
+    if(next)return next;
+  }
+  return null;
+}
+function innateValueFor(cls,rankIdx){return cls.kind==='boss_alpha_strike'?1:Math.round(CHAMP_KIND_BASE[cls.kind]*(1+rankIdx*.18)*1000)/1000;}
+/* Recruited heroes also earn a full skill tree on top of this innate, so their
+   copy rolls at a fraction of a Champion's — full strength stays a Champion-only perk. */
+const HERO_INNATE_MULT=.6;
+function heroInnateValue(cls,rankIdx){return Math.round(innateValueFor(cls,rankIdx)*HERO_INNATE_MULT*1000)/1000;}
+function generateChampion(){
+  const rankId=weightedRank();
+  const rank=RANKS.find(r=>r.id===rankId);
+  const rankIdx=RANKS.findIndex(rk=>rk.id===rankId);
+  const pool=CLASS_POOL.filter(c=>c.rank===rankId);
+  const cls=pick(pool);
+  const champ={
+    id:'champ'+(state.nextId++),name:cls.name,isChampion:true,rank:rankId,type:cls.type,
+    innateKind:cls.kind,innateValue:innateValueFor(cls,rankIdx),flavor:cls.flavor,
+    level:1,xp:0,skillPoints:0,skills:{},trait:null,downedUntil:0,
+    baseHp:Math.round(30*cls.hpRatio*rank.mult),baseDmg:Math.round(8*cls.dmgRatio*rank.mult),
+  };
+  champ.hp=maxHp(champ);
+  return champ;
+}
+const BRANCHES=[
+ {id:'ops',name:'Operations Branch',sub:'Hero Roster & Combat Management',nodes:[
+   {id:'roster',name:'Roster Expansion',max:5,costBase:30,costStep:20,effect:l=>`+${l*2} hero slots`,cap:{name:'Elite Barracks',cost:400,desc:'Set a Guild Mentor — new recruits join one level higher.'}},
+   {id:'medical',name:'Medical Bay',max:5,costBase:25,costStep:18,effect:l=>`-${l*10}% recovery time`,cap:{name:'Field Triage',cost:350,desc:'Once per rift cycle, instantly heal the whole team.'}},
+   {id:'drill',name:'Tactical Drilling',max:5,costBase:35,costStep:22,effect:l=>`+${l*3}% HP/DMG in Rifts`,cap:{name:'Vanguard Order',cost:450,desc:"A fight's first strike deals +25% bonus damage."}},
+   {id:'trait',name:'Trait Management Office',max:3,costBase:40,costStep:30,effect:l=>l>0?'Scrub negative traits for Coins':'Locked',cap:null},
+ ]},
+ {id:'infra',name:'Infrastructure Branch',sub:'Rift Efficiency & Yield',nodes:[
+   {id:'crystal',name:'Crystal Amplifiers',max:5,costBase:30,costStep:20,effect:l=>`+${l*5}% Crystal yield`,cap:{name:'Crystal Resonance',cost:400,desc:'Rift Bosses drop a bonus Pure Crystal cache.'}},
+   {id:'stab',name:'Rift Stabilization',max:5,costBase:28,costStep:18,effect:l=>`-${l*8}% hazard severity`,cap:{name:'Anchor Artifact',cost:380,desc:"Negates each floor's first hazard entirely."}},
+   {id:'seal',name:'Seal Maximizer',max:3,costBase:45,costStep:30,effect:l=>`+${l*10}% Seal Tokens on a fast clear`,cap:null},
+   {id:'energy',name:'Energy Extraction',max:5,costBase:26,costStep:16,effect:l=>`${l*5}% elite bonus-Crystal chance`,cap:null},
+ ]},
+ {id:'log',name:'Logistics Branch',sub:'Economy & Market',nodes:[
+   {id:'broker',name:'Broker Network',max:5,costBase:30,costStep:20,effect:l=>`-${l*3}% Auction fees`,cap:{name:'Black Market Clearance',cost:420,desc:'Unlocks premium bids on ultra-rare Rift Detectors.'}},
+   {id:'scout',name:'Targeted Scouting',max:3,costBase:35,costStep:25,effect:l=>l>0?`HR filters unlocked (Lvl ${l})`:'Locked',cap:{name:'Headhunter',cost:400,desc:'Guarantees a Rank C+ hero in every HR refresh.'}},
+   {id:'merchant',name:'Merchant Contract',max:5,costBase:24,costStep:14,effect:l=>`-${l*5}% shop prices`,cap:null},
+   {id:'detector',name:'Detector Tuning',max:4,costBase:32,costStep:20,effect:l=>`+${l*5}% Rift Detector drops`,cap:null},
+ ]},
+ {id:'res',name:'Research Branch',sub:'Run Mechanics & Analytics',nodes:[
+   {id:'relic',name:'Relic Storage',max:3,costBase:30,costStep:22,effect:l=>l>0?`${l===1?2:l===2?3:4} starting Relic choices`:'Locked',cap:{name:'Inherited Power',cost:380,desc:'Start every Rift with a Rare Relic instead of Common.'}},
+   {id:'theory',name:'Theorycrafting Lab',max:3,costBase:28,costStep:20,effect:l=>l>0?'Damage dummy & synergy highlights unlocked':'Locked',cap:{name:'Optimal Synergy',cost:400,desc:'3 equipped Relics of one type grant +15% damage.'}},
+   {id:'recycle',name:'Relic Recycling',max:3,costBase:22,costStep:14,effect:l=>l>0?'Scrap unwanted Relics for Crystals':'Locked',cap:null},
+   {id:'cart',name:'Arcane Cartography',max:3,costBase:26,costStep:16,effect:l=>l>0?'Reveals the rift path on entry':'Locked',cap:null},
+   {id:'vault',name:'Relic Vault',max:2,costBase:50,costStep:40,effect:l=>`+${l} equipped Relic slot`,cap:null},
+ ]},
+];
+
+/* ---------------- helpers ---------------- */
+const rand=n=>Math.floor(Math.random()*n);
+const pick=a=>a[rand(a.length)];
+function fmt(n){n=Math.round(n);const a=Math.abs(n);if(a>=1000000)return(n/1000000).toFixed(1).replace(/\.0$/,'')+'M';if(a>=10000)return(n/1000).toFixed(1).replace(/\.0$/,'')+'k';return n.toLocaleString();}
+const rangeRand=([lo,hi])=>lo+rand(hi-lo+1);
+let toastTimer=null;
+let revealTimer=null;
+function flash(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
+
+let state=null;
+let ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false};
+
+function defaultState(){return{guildName:null,nextId:1,resources:{coins:60,crystals:15,tokens:0},heroes:[],relics:[],detectors:[],upgrades:{},caps:{},recruitPool:[],triageUsedThisCycle:false,sealedCount:0,run:null,onboarded:false,bestEndlessCycle:0};}
+function save(){localStorage.setItem('guildSystemSave',JSON.stringify(state));}
+function load(){
+  try{const raw=localStorage.getItem('guildSystemSave');if(raw)state=JSON.parse(raw);}catch(e){}
+  if(state&&state.run&&state.run.nodeState&&state.run.nodeState.resolving){
+    const ns=state.run.nodeState;ns.revealedCount=ns.log.length;ns.resolving=false;ns.resolved=true;
+  }
+  if(state&&state.heroes)state.heroes.forEach(h=>{if(!h.rank)h.rank='F';});
+  if(state&&state.recruitPool)state.recruitPool.forEach(h=>{if(!h.rank)h.rank='F';});
+}
+
+function lvl(id){return state.upgrades[id]||0;}
+function hasCap(id){return !!state.caps[id];}
+function findNode(bId,nId){return BRANCHES.find(b=>b.id===bId).nodes.find(n=>n.id===nId);}
+
+function tacticalBonus(){return 1+0.03*lvl('ops.drill');}
+function medicalRecoveryReduction(){return Math.min(.5,0.10*lvl('ops.medical'));}
+function fieldTriageAvailable(){return hasCap('ops.medical');}
+function heroSlotCap(){return 4+2*lvl('ops.roster');}
+function guildMentor(){return hasCap('ops.roster');}
+function crystalYieldBonus(){return 1+0.05*lvl('infra.crystal');}
+function hazardSeverityReduction(){return Math.min(.8,0.08*lvl('infra.stab'));}
+function anchorArtifact(){return hasCap('infra.stab');}
+function sealTokenBonus(){return 1+0.10*lvl('infra.seal');}
+function energyExtractChance(){return 0.05*lvl('infra.energy');}
+function brokerFeeReduction(){return Math.min(.10,0.03*lvl('log.broker'));}
+function blackMarketUnlocked(){return hasCap('log.broker');}
+function headhunterGuarantee(){return hasCap('log.scout');}
+function merchantPriceReduction(){return Math.min(.6,0.05*lvl('log.merchant'));}
+function detectorDropBonus(){return 0.05*lvl('log.detector');}
+function relicChoiceCount(){const l=lvl('res.relic');return l>=3?4:l===2?3:l===1?2:0;}
+function inheritedPower(){return hasCap('res.relic');}
+function synergyUnlockedFlag(){return hasCap('res.theory');}
+function recycleUnlocked(){return lvl('res.recycle')>0;}
+function cartographyUnlocked(){return lvl('res.cart')>0;}
+function relicSlotCap(){return 3+lvl('res.vault');}
+
+function maxHp(h){return Math.round(h.baseHp*(1+(TRAIT_TABLE[h.trait]?.hp||0))*(1+heroSkillTotal(h,'hp_pct')));}
+function dmgOf(h){return Math.round(h.baseDmg*(1+(TRAIT_TABLE[h.trait]?.dmg||0))*(1+heroSkillTotal(h,'dmg_pct')));}
+function isDowned(h){return h.downedUntil&&h.downedUntil>Date.now();}
+function powerOf(h){return dmgOf(h)*2+Math.round(maxHp(h)/3);}
+function heroSkillTotal(h,kind){
+  let s=0;
+  if(h.skills){const tree=CLASS_SKILLS[h.clsId]||[];tree.forEach(n=>{if(n.kind===kind&&h.skills[n.id])s+=n.value;});}
+  if(h.innateKind===kind)s+=h.innateValue||0;
+  return s;
+}
+function partySkillTotal(party,kind){return party.reduce((s,h)=>s+heroSkillTotal(h,kind),0);}
+/* Small team-wide reward for matching a hero's elemental affinity to an
+   equipped relic's type — ties the class and item systems together. */
+function affinityBonus(party){
+  const equippedTypes=new Set(equippedRelics().map(r=>r.type));
+  const matched=new Set(party.filter(h=>h.type&&equippedTypes.has(h.type)).map(h=>h.type));
+  return matched.size*0.03;
+}
+function xpToNext(level){return 40+(level-1)*25;}
+function gainXp(h,amount){
+  h.xp=(h.xp||0)+amount;
+  while((h.level||1)<10&&h.xp>=xpToNext(h.level||1)){
+    h.xp-=xpToNext(h.level||1);
+    h.level=(h.level||1)+1;
+    h.baseHp=Math.round(h.baseHp*1.08);h.baseDmg=Math.round(h.baseDmg*1.08);
+    h.skillPoints=(h.skillPoints||0)+1;
+  }
+}
+function describeSkill(n){
+  switch(n.kind){
+    case'dmg_pct':return`+${Math.round(n.value*100)}% damage`;
+    case'hp_pct':return`+${Math.round(n.value*100)}% HP`;
+    case'first_round_pct':return`+${Math.round(n.value*100)}% first-strike damage`;
+    case'escalate_pct':return`+${Math.round(n.value*100)}% damage per round (stacking)`;
+    case'mend_pct':return`Mends ${Math.round(n.value*100)}% of the party's HP pool each round`;
+    case'hazard_guard_pct':return`-${Math.round(n.value*100)}% hazard severity`;
+    case'dodge_pct':return`${Math.round(n.value*100)}% chance to block a retaliation`;
+    case'wipe_guard':return`Once per rift, survive a wipe at ${Math.round(n.value*100)}% HP`;
+    case'boss_alpha_strike':return'Opens every Boss fight with a free strike';
+    default:return'';
+  }
+}
+function recoveryMs(){return Math.round(120000*(1-medicalRecoveryReduction()));}
+function equippedRelics(){return state.relics.filter(r=>r.equipped);}
+function relicDmgBonus(){return equippedRelics().reduce((s,r)=>s+r.dmg,0);}
+function synergyBonus(){
+  if(!synergyUnlockedFlag())return null;
+  const counts={};
+  equippedRelics().forEach(r=>counts[r.type]=(counts[r.type]||0)+1);
+  const type=Object.keys(counts).find(t=>counts[t]>=3);
+  return type?{type,...SYNERGY_BONUS[type]}:null;
+}
+function synergyValueFor(kind){const s=synergyBonus();return s&&s.kind===kind?s.value:0;}
+
+function weightedRarity(){const total=RARITIES.reduce((s,r)=>s+r.weight,0);let r=rand(total);for(const rar of RARITIES){if(r<rar.weight)return rar.id;r-=rar.weight;}return'common';}
+function weightedRank(){const total=RANKS.reduce((s,r)=>s+r.weight,0);let r=rand(total);for(const rk of RANKS){if(r<rk.weight)return rk.id;r-=rk.weight;}return'F';}
+function pickTraitName(){const r=Math.random();if(r<.28)return pick(NEG_TRAITS);if(r<.62)return pick(POS_TRAITS);return null;}
+function genHero(rankId,levelHint){
+  const rank=RANKS.find(r=>r.id===rankId)||RANKS.find(r=>r.id===weightedRank());
+  const rankIdx=RANKS.findIndex(rk=>rk.id===rank.id);
+  const cls=pick(CLASS_POOL.filter(c=>c.rank===rank.id));
+  const roleCls=CLASSES.find(c=>c.id===cls.role);
+  const trait=pickTraitName();
+  const s=1+0.08*(levelHint-1);
+  const baseHp=Math.round(roleCls.baseHp*cls.hpRatio*rank.mult*s);
+  const baseDmg=Math.round(roleCls.baseDmg*cls.dmgRatio*rank.mult*s);
+  const hero={
+    id:'h'+(state.nextId++),name:`${pick(FIRST_NAMES)} the ${cls.name}`,
+    clsId:cls.role,poolId:cls.id,type:cls.type,flavor:cls.flavor,rank:rank.id,
+    innateKind:cls.kind,innateValue:heroInnateValue(cls,rankIdx),
+    level:levelHint,xp:0,skillPoints:0,skills:{},baseHp,baseDmg,trait,downedUntil:0,
+  };
+  hero.hp=maxHp(hero);
+  return hero;
+}
+function genRelic(rarityId){
+  const type=pick(RELIC_TYPES);const rarity=RARITIES.find(r=>r.id===rarityId);
+  const noun=pick(['Sigil','Charm','Shard','Idol','Emblem']);
+  const hasSpecial=Math.random()<.4;
+  const relic={name:`${type} ${noun}`,type,rarity:rarity.id,dmg:Math.round((hasSpecial?2:3)*rarity.mult),hp:Math.round((hasSpecial?6:9)*rarity.mult)};
+  if(hasSpecial){
+    const s=pick(RELIC_SPECIALS);
+    relic.special={kind:s.kind,value:Math.round(s.value*rarity.mult*1000)/1000,label:s.label};
+  }
+  return relic;
+}
+function relicDesc(r){return `+${r.dmg} DMG · +${r.hp} Shield${r.special?` · ${r.special.label}`:''}`;}
+function relicSpecialTotal(kind){return equippedRelics().reduce((s,r)=>s+(r.special&&r.special.kind===kind?r.special.value:0),0);}
+function genMonster(diff,floorIdx,kind){
+  const scale=1+floorIdx*0.12;
+  const hpMult=kind==='boss'?1.8:(kind==='elite'?1.45:1);
+  const dmgMult=kind==='boss'?1.5:(kind==='elite'?1.3:1);
+  const hp=Math.round(diff.monsterHp*scale*hpMult);
+  const dmg=Math.round(diff.monsterDmg*scale*dmgMult);
+  const name=kind==='boss'?`${pick(BOSS_NAMES)}, ${diff.name.split(' ')[0]} Warden`:(kind==='elite'?pick(ELITE_NAMES):pick(MONSTER_NAMES));
+  return{name,hp,dmg};
+}
+function genRecruitOffer(forceRank){return genHero(forceRank||weightedRank(),1);}
+function refreshRecruitPool(){
+  state.recruitPool=[0,1,2,3].map(()=>genRecruitOffer());
+  if(headhunterGuarantee()){
+    const order=RANKS.map(r=>r.id);
+    if(!state.recruitPool.some(h=>order.indexOf(h.rank)>=3))state.recruitPool[0]=genRecruitOffer(pick(['C','B','A','S']));
+  }
+}
+
+/* ---------------- actions: guild founding ---------------- */
+function foundGuild(){
+  const input=document.getElementById('guildNameInput');
+  const name=(input.value||'').trim();
+  if(!name){flash('Name your guild first');return;}
+  state=defaultState();state.guildName=name;
+  state.heroes=[genHero('F',1),genHero('F',1),genHero('F',1)];
+  refreshRecruitPool();save();render();
+}
+
+/* ---------------- actions: recruit / upgrades ---------------- */
+function recruitHero(offerId){
+  const idx=state.recruitPool.findIndex(h=>h.id===offerId);if(idx<0)return;
+  if(state.heroes.length>=heroSlotCap())return flash('Roster is full — upgrade Roster Expansion');
+  const offer=state.recruitPool[idx];const rank=RANKS.find(r=>r.id===offer.rank);
+  if(state.resources.coins<rank.cost)return flash('Not enough Coins');
+  state.resources.coins-=rank.cost;
+  const isDupe=state.heroes.some(h=>h.poolId===offer.poolId);
+  const hero={...offer};
+  if(guildMentor()){hero.level=2;hero.skillPoints=(hero.skillPoints||0)+1;hero.baseHp=Math.round(hero.baseHp*1.08);hero.baseDmg=Math.round(hero.baseDmg*1.08);}
+  hero.hp=maxHp(hero);hero.downedUntil=0;
+  state.heroes.push(hero);
+  state.recruitPool[idx]=genRecruitOffer();
+  if(isDupe){
+    const refund=Math.round(rank.cost*.5);
+    state.resources.coins+=refund;
+    flash(`Already had a ${hero.name.split(' the ')[1]} — refunded ${refund}c.`);
+  }
+  save();render();
+}
+function upgradeNode(bId,nId){
+  const key=`${bId}.${nId}`;const node=findNode(bId,nId);const cur=lvl(key);
+  if(cur>=node.max)return;
+  const cost=node.costBase+node.costStep*cur;
+  if(state.resources.crystals<cost)return flash('Not enough Crystals');
+  state.resources.crystals-=cost;state.upgrades[key]=cur+1;save();render();
+}
+function buyCap(bId,nId){
+  const key=`${bId}.${nId}`;const node=findNode(bId,nId);
+  if(lvl(key)<node.max||hasCap(key))return;
+  if(state.resources.crystals<node.cap.cost)return flash('Not enough Crystals');
+  state.resources.crystals-=node.cap.cost;state.caps[key]=true;save();render();
+}
+function scrubTrait(heroId){
+  if(lvl('ops.trait')<1)return flash('Unlock the Trait Management Office first');
+  const h=state.heroes.find(x=>x.id===heroId);if(!h||!NEG_TRAITS.includes(h.trait))return;
+  if(state.resources.coins<30)return flash('Need 30 Coins');
+  state.resources.coins-=30;h.trait=null;h.hp=maxHp(h);save();render();
+}
+function rerollTrait(heroId){
+  const h=state.heroes.find(x=>x.id===heroId);if(!h)return;
+  if(state.resources.coins<60)return flash('Need 60 Coins');
+  state.resources.coins-=60;h.trait=pickTraitName();h.hp=Math.min(maxHp(h),h.hp);
+  flash(`Rerolled: ${h.trait||'Steadfast'}`);save();render();
+}
+function dismissHero(heroId){
+  if(!ui.confirmDismiss||ui.confirmDismiss!==heroId){
+    ui.confirmDismiss=heroId;render();setTimeout(()=>{if(ui.confirmDismiss===heroId)ui.confirmDismiss=null;render();},3000);return;
+  }
+  ui.confirmDismiss=null;
+  const h=state.heroes.find(x=>x.id===heroId);if(!h)return;
+  const rank=RANKS.find(r=>r.id===h.rank);
+  const refund=Math.round((rank?rank.cost:25)*.3);
+  state.heroes=state.heroes.filter(x=>x.id!==heroId);
+  state.resources.coins+=refund;
+  flash(`${h.name} dismissed — +${refund}c.`);save();render();
+}
+function evolveHero(heroId){
+  const h=state.heroes.find(x=>x.id===heroId);if(!h)return;
+  if((h.level||1)<10)return flash('Must be Level 10 to evolve');
+  const curCls=CLASS_POOL.find(c=>c.id===h.poolId);if(!curCls)return flash('This hero predates the evolution system');
+  const next=evolutionTarget(curCls);
+  if(!next)return flash('Already at the top of this path');
+  const nextRank=RANKS.find(r=>r.id===next.rank);
+  if(state.resources.crystals<nextRank.cost)return flash('Not enough Crystals');
+  const curRank=RANKS.find(r=>r.id===curCls.rank);
+  state.resources.crystals-=nextRank.cost;
+  const ratioMult=(next.hpRatio/curCls.hpRatio)*(nextRank.mult/curRank.mult);
+  const dmgRatioMult=(next.dmgRatio/curCls.dmgRatio)*(nextRank.mult/curRank.mult);
+  h.baseHp=Math.round(h.baseHp*ratioMult);
+  h.baseDmg=Math.round(h.baseDmg*dmgRatioMult);
+  h.poolId=next.id;h.rank=next.rank;h.type=next.type;h.flavor=next.flavor;
+  h.innateKind=next.kind;
+  const rankIdx=RANKS.findIndex(r=>r.id===next.rank);
+  h.innateValue=heroInnateValue(next,rankIdx);
+  h.name=`${h.name.split(' the ')[0]} the ${next.name}`;
+  h.hp=maxHp(h);
+  flash(`${h.name} evolved into a Rank ${next.rank} ${CLASSES.find(c=>c.id===next.role).name}!`);
+  save();render();
+}
+function toggleEquip(id){
+  const r=state.relics.find(x=>x.id===id);if(!r)return;
+  if(!r.equipped&&equippedRelics().length>=relicSlotCap())return flash(`Only ${relicSlotCap()} Relic slots`);
+  r.equipped=!r.equipped;save();render();
+}
+function scrapRelic(id){
+  if(!recycleUnlocked())return;
+  const r=state.relics.find(x=>x.id===id);if(!r||r.equipped)return;
+  const gain=Math.round(6*RARITIES.find(x=>x.id===r.rarity).mult);
+  state.resources.crystals+=gain;state.relics=state.relics.filter(x=>x.id!==id);
+  flash(`Scrapped for +${gain} Crystals`);save();render();
+}
+function sellRelic(id){
+  const r=state.relics.find(x=>x.id===id);if(!r||r.equipped)return;
+  const base=15*RARITIES.find(x=>x.id===r.rarity).mult;
+  const fee=Math.max(.05,.15-brokerFeeReduction());
+  const sale=Math.round(base*(1-fee));
+  state.resources.coins+=sale;state.relics=state.relics.filter(x=>x.id!==id);
+  flash(`Sold for +${sale} Coins`);save();render();
+}
+function sellDetector(id){
+  const d=state.detectors.find(x=>x.id===id);if(!d)return;
+  const base={lesser:80,greater:200,ascendant:450}[d.tier];
+  const bonus=blackMarketUnlocked()?1.3:1;
+  const fee=Math.max(.05,.15-brokerFeeReduction());
+  const sale=Math.round(base*bonus*(1-fee));
+  state.resources.coins+=sale;state.detectors=state.detectors.filter(x=>x.id!==id);
+  flash(`Auctioned for +${sale} Coins`);save();render();
+}
+function useDetectorForShopBoost(id){
+  if(state.pendingShopBoost)return flash('A Shop Boost is already armed');
+  const d=state.detectors.find(x=>x.id===id);if(!d)return;
+  state.detectors=state.detectors.filter(x=>x.id!==id);
+  state.pendingShopBoost=true;
+  flash('Shop Boost armed — your next Rift shop guarantees an Epic Relic.');
+  save();render();
+}
+const RELIC_MAX_LEVEL=5;
+function upgradeRelic(id){
+  const r=state.relics.find(x=>x.id===id);if(!r)return;
+  const lvl=r.level||1;if(lvl>=RELIC_MAX_LEVEL)return flash('Already max level');
+  const cost=Math.round(15*RARITIES.find(x=>x.id===r.rarity).mult*lvl);
+  if(state.resources.crystals<cost)return flash('Not enough Crystals');
+  state.resources.crystals-=cost;
+  r.dmg=Math.round(r.dmg*1.15);r.hp=Math.round(r.hp*1.15);
+  if(r.special)r.special.value=Math.round(r.special.value*1.15*1000)/1000;
+  r.level=lvl+1;
+  flash(`${r.name} upgraded to level ${r.level}`);save();render();
+}
+function learnSkill(heroId,skillId){
+  const h=state.heroes.find(x=>x.id===heroId);if(!h)return;
+  const tree=CLASS_SKILLS[h.clsId]||[];const n=tree.find(x=>x.id===skillId);if(!n)return;
+  h.skills=h.skills||{};
+  if(h.skills[skillId])return;
+  if((h.level||1)<n.reqLevel)return flash(`Requires Level ${n.reqLevel}`);
+  if(n.requires.length&&!n.requires.every(r=>h.skills[r]))return flash('Learn the prerequisite skill(s) first');
+  if((h.skillPoints||0)<n.cost)return flash('Not enough Skill Points');
+  h.skillPoints-=n.cost;h.skills[skillId]=true;save();render();
+}
+function toggleHeroSkills(id){ui.expandedHeroId=ui.expandedHeroId===id?null:id;render();}
+function respecHero(heroId){
+  const h=state.heroes.find(x=>x.id===heroId);if(!h||!h.skills)return;
+  const spent=Object.values(h.skills).filter(Boolean).length;
+  if(spent===0)return;
+  if(state.resources.coins<50)return flash('Need 50 Coins');
+  state.resources.coins-=50;h.skillPoints=(h.skillPoints||0)+spent;h.skills={};
+  flash('Skills reset.');save();render();
+}
+function fieldTriageAction(){
+  if(!fieldTriageAvailable()||state.triageUsedThisCycle)return;
+  state.heroes.forEach(h=>{h.downedUntil=0;h.hp=maxHp(h);});
+  state.triageUsedThisCycle=true;flash('Field Triage: the team is whole again.');save();render();
+}
+function resetGuild(){
+  if(!ui.confirmReset){ui.confirmReset=true;render();setTimeout(()=>{ui.confirmReset=false;render();},3000);return;}
+  localStorage.removeItem('guildSystemSave');state=null;ui={tab:'rift',termTab:'recruits',pendingDiff:null,pendingHeroIds:[],pendingChampion:null,pendingRelicOptions:[],pendingRelicChoiceIdx:null,confirmReset:false,confirmRetreat:false,expandedHeroId:null,rosterSort:'level',rosterFilter:'all',selectedAbility:null,confirmDismiss:null,pendingHardcore:false};render();
+}
+
+/* ---------------- actions: rift run ---------------- */
+function openAssembly(diffId){
+  ui.pendingDiff=diffId;ui.pendingHeroIds=[];
+  ui.pendingChampion=generateChampion();
+  const n=relicChoiceCount();
+  ui.pendingRelicOptions=n>0?Array.from({length:n},()=>genRelic(inheritedPower()?'rare':'common')):[];
+  ui.pendingRelicChoiceIdx=null;render();
+}
+function cancelAssembly(){ui.pendingDiff=null;ui.pendingChampion=null;render();}
+function toggleHeroPick(id){
+  const h=state.heroes.find(x=>x.id===id);if(!h||isDowned(h))return;
+  const i=ui.pendingHeroIds.indexOf(id);
+  if(i>=0)ui.pendingHeroIds.splice(i,1);
+  else{if(ui.pendingHeroIds.length>=3)return flash('Max 3 heroes per party');ui.pendingHeroIds.push(id);}
+  render();
+}
+function pickRelicOption(idx){ui.pendingRelicChoiceIdx=ui.pendingRelicChoiceIdx===idx?null:idx;render();}
+function buildLayers(diff){
+  const layers=[{options:['combat']}];
+  const midCount=diff.floors-2;
+  const pool=['combat','combat','shop','hazard','elite'];
+  for(let i=0;i<midCount;i++){
+    let a=pick(pool),b=pick(pool),guard=0;
+    while(b===a&&guard<6){b=pick(pool);guard++;}
+    if(b===a)b=pick(pool.filter(x=>x!==a));
+    layers.push({options:[a,b]});
+  }
+  if(midCount>0&&!layers.some(l=>l.options.includes('elite'))){
+    const li=1+rand(midCount);layers[li].options[rand(2)]='elite';
+  }
+  layers.push({options:['boss']});
+  return layers;
+}
+function autoResolveSingleOption(){
+  if(!state.run)return;
+  const layer=state.run.layers[state.run.pos];
+  if(layer&&layer.options.length===1&&state.run.chosen[state.run.pos]===undefined){
+    state.run.chosen[state.run.pos]=layer.options[0];
+  }
+}
+function chooseNode(type){
+  if(state.run.chosen[state.run.pos]!==undefined)return;
+  state.run.chosen[state.run.pos]=type;state.run.nodeState=null;state.run.hazardType=undefined;save();render();
+}
+function enterRift(){
+  const endless=ui.pendingDiff==='endless';
+  const diff=endless?endlessDiffForCycle(0):DIFFICULTIES.find(d=>d.id===ui.pendingDiff);
+  const layers=buildLayers(diff);
+  let shield=equippedRelics().reduce((s,r)=>s+r.hp,0);
+  if(ui.pendingRelicChoiceIdx!=null){
+    const chosen=ui.pendingRelicOptions[ui.pendingRelicChoiceIdx];
+    shield+=chosen.hp;
+    state.relics.push({id:'rl'+(state.nextId++),name:chosen.name,type:chosen.type,rarity:chosen.rarity,dmg:chosen.dmg,hp:chosen.hp,special:chosen.special,equipped:false});
+  }
+  state.run={diffId:ui.pendingDiff,endless,cycle:0,layers,pos:0,chosen:[],heroIds:[...ui.pendingHeroIds],champion:ui.pendingChampion,shield,anchorUsed:false,nodeState:null,sealed:null,hardcore:ui.pendingHardcore};
+  autoResolveSingleOption();
+  ui.pendingDiff=null;ui.pendingHeroIds=[];ui.pendingRelicOptions=[];ui.pendingRelicChoiceIdx=null;ui.pendingChampion=null;ui.selectedAbility=null;ui.pendingHardcore=false;
+  save();render();
+}
+function currentParty(){
+  const roster=state.run.heroIds.map(id=>state.heroes.find(h=>h.id===id)).filter(Boolean);
+  return state.run.champion?[state.run.champion,...roster]:roster;
+}
+function ensureBossPreview(){
+  if(!state.run.bossPreview){
+    const diff=currentDiff();
+    const monster=genMonster(diff,state.run.pos,'boss');
+    const mechanic=pick(BOSS_MECHANICS);
+    if(mechanic.id==='frenzied')monster.dmg=Math.round(monster.dmg*1.25);
+    state.run.bossPreview={monster,mechanic};
+  }
+}
+function engageCombat(kind){
+  const isBoss=kind==='boss';
+  const diff=currentDiff();
+  const party=currentParty().filter(h=>!isDowned(h)&&h.hp>0);
+  if(party.length===0){flash('Every assigned hero is downed!');return;}
+  const abilityUsed=ui.selectedAbility;ui.selectedAbility=null;
+  if(abilityUsed==='cleric')party.forEach(h=>{h.hp=maxHp(h);});
+  let monster,mechanic=null;
+  if(isBoss){
+    ensureBossPreview();
+    monster=state.run.bossPreview.monster;mechanic=state.run.bossPreview.mechanic;
+  }else{
+    monster=genMonster(diff,state.run.pos,kind);
+  }
+  const monsterDmg=abilityUsed==='ranger'?Math.round(monster.dmg*.6):monster.dmg;
+  const rawSum=party.reduce((s,h)=>s+dmgOf(h),0);
+  let teamDmgBase=(rawSum*tacticalBonus()+relicDmgBonus())*(1+synergyValueFor('dmg_pct')+affinityBonus(party));
+  if(abilityUsed==='warrior')teamDmgBase*=1.3;
+  const vanguard=hasCap('ops.drill');
+  const firstRoundBonus=(vanguard?0.25:0)+partySkillTotal(party,'first_round_pct')+relicSpecialTotal('first_round_pct')+synergyValueFor('first_round_pct')+(abilityUsed==='rogue'?0.9:0);
+  const escalate=partySkillTotal(party,'escalate_pct')+relicSpecialTotal('escalate_pct')+synergyValueFor('escalate_pct');
+  const mend=Math.min(.4,partySkillTotal(party,'mend_pct')+relicSpecialTotal('mend_pct')+synergyValueFor('mend_pct'));
+  const dodge=Math.min(.6,partySkillTotal(party,'dodge_pct')+relicSpecialTotal('dodge_pct')+synergyValueFor('dodge_pct'));
+  const wipeGuard=Math.min(.9,partySkillTotal(party,'wipe_guard')+relicSpecialTotal('wipe_guard'));
+  const alphaStrikes=isBoss?partySkillTotal(party,'boss_alpha_strike')+relicSpecialTotal('boss_alpha_strike'):0;
+  let mHp=monster.hp,shield=state.run.shield||0;
+  const totalMaxAtStart=party.reduce((s,h)=>s+maxHp(h),0)||1;
+  let hpPool=party.reduce((s,h)=>s+h.hp,0);
+  const log=[`A ${monster.name} blocks the way (${fmt(monster.hp)} HP).`];
+  if(mechanic)log.push(`${mechanic.name}: ${mechanic.desc}`);
+  if(abilityUsed)log.push(`${ABILITIES[abilityUsed].name} activated!`);
+  if(alphaStrikes>0){
+    const alpha=teamDmgBase*alphaStrikes;
+    mHp-=alpha;
+    log.push(`Cataclysm unleashes an opening volley for ${fmt(alpha)}!`);
+  }
+  if(abilityUsed==='mage'){
+    const burst=teamDmgBase;
+    mHp-=burst;
+    log.push(`Overcharge unleashes a burst for ${fmt(burst)}!`);
+  }
+  let round=0,wipeGuardUsed=false;
+  while(mHp>0&&hpPool>0&&round<30){
+    round++;
+    const mult=(round===1?1+firstRoundBonus:1)*(1+escalate*(round-1));
+    const dealt=teamDmgBase*mult;
+    mHp-=dealt;
+    log.push(`Round ${round} — the Guild strikes for ${fmt(dealt)}.`);
+    if(mHp<=0){log.push(`The ${monster.name} falls!`);break;}
+    if(mechanic&&mechanic.id==='regen'){
+      const heal=Math.round(monster.hp*.08);
+      mHp=Math.min(monster.hp,mHp+heal);
+      log.push(`${monster.name} regenerates ${fmt(heal)} HP.`);
+    }
+    if(mend>0){
+      const heal=Math.round(hpPool*mend);
+      if(heal>0){hpPool=Math.min(totalMaxAtStart,hpPool+heal);log.push(`The party mends ${fmt(heal)} HP.`);}
+    }
+    let back=monsterDmg;
+    if(mechanic&&mechanic.id==='enrage'&&round>4)back=Math.round(back*(1+0.15*(round-4)));
+    const warded=mechanic&&mechanic.id==='warded'&&round<=2;
+    if(!warded&&dodge>0&&Math.random()<dodge){
+      log.push(`The party evades the ${monster.name}'s retaliation!`);back=0;
+    }
+    if(!warded&&shield>0&&back>0){const abs=Math.min(shield,back);shield-=abs;back-=abs;if(abs>0)log.push(`Relic wards absorb ${fmt(abs)} damage.`);}
+    if(back>0){
+      hpPool=Math.max(0,hpPool-back);
+      log.push(`The ${monster.name} hits back for ${fmt(back)}.`);
+      if(hpPool<=0&&!wipeGuardUsed&&wipeGuard>0){
+        wipeGuardUsed=true;hpPool=Math.max(1,Math.round(totalMaxAtStart*wipeGuard));
+        log.push(`Last Stand! The party clings to life with ${fmt(hpPool)} HP.`);
+      }
+    }
+  }
+  const won=mHp<=0;
+  state.run.shield=shield;
+  if(!won){
+    if(state.run.hardcore){
+      party.forEach(h=>{state.heroes=state.heroes.filter(x=>x.id!==h.id);});
+      log.push('Your party is overwhelmed... and lost for good.');
+    }else{
+      party.forEach(h=>{h.hp=0;h.downedUntil=Date.now()+recoveryMs();});
+      log.push('Your party is overwhelmed...');
+    }
+  }else{
+    party.forEach(h=>{const share=maxHp(h)/totalMaxAtStart;h.hp=Math.max(1,Math.min(maxHp(h),Math.round(hpPool*share)));});
+  }
+  let coin=0,crystal=0,bonusCrystal=0,rewardOptions=null;
+  if(won){
+    const rewardMult=(kind==='elite'?1.4:1)*(state.run.hardcore?1.5:1);
+    const depthMult=1+state.run.pos*0.05;
+    coin=Math.round(rangeRand(diff.coin)*rewardMult*depthMult);
+    crystal=Math.round(rangeRand(diff.crystal)*crystalYieldBonus()*rewardMult*depthMult);
+    state.resources.coins+=coin;state.resources.crystals+=crystal;
+    log.push(`Loot secured: +${coin} Coins, +${crystal} Crystals.`);
+    if(kind==='elite'){
+      party.forEach(()=>{if(Math.random()<energyExtractChance())bonusCrystal+=rand(4)+2;});
+      if(bonusCrystal>0){state.resources.crystals+=bonusCrystal;log.push(`Elite spoils: +${bonusCrystal} bonus Crystals.`);}
+    }
+    const xpGain=isBoss?30:(kind==='elite'?20:12);
+    party.forEach(h=>gainXp(h,xpGain));
+    log.push(`+${xpGain} XP to each hero in the fight.`);
+    if(!isBoss)rewardOptions=[genRelic(weightedRarity()),genRelic(weightedRarity())];
+  }
+  state.run.nodeState={type:'combat',log,won,kind,rounds:round,revealedCount:0,resolving:true,rewardOptions,rewardChosen:false};
+  save();render();
+  startReveal();
+}
+function startReveal(){
+  clearInterval(revealTimer);
+  revealTimer=setInterval(()=>{
+    if(!state||!state.run||!state.run.nodeState||!state.run.nodeState.resolving){clearInterval(revealTimer);return;}
+    const ns=state.run.nodeState;
+    const step=ns.log.length>20?2:1;
+    ns.revealedCount=Math.min(ns.log.length,(ns.revealedCount||0)+step);
+    if(ns.revealedCount>=ns.log.length){
+      ns.resolving=false;ns.resolved=true;
+      if(ns.kind==='boss'&&ns.won)state.run.bossRounds=ns.rounds;
+      clearInterval(revealTimer);
+    }
+    save();render();
+  },140);
+}
+function ensureHazardPreview(){if(!state.run.hazardType)state.run.hazardType=pick(HAZARD_TYPES);}
+function pushThroughHazard(){
+  const diff=currentDiff();
+  const party=currentParty().filter(h=>!isDowned(h)&&h.hp>0);
+  ensureHazardPreview();
+  const hz=state.run.hazardType;
+  const log=[];let dmg=(6+diff.floors*2)*hz.dmgMult;
+  if(!state.run.anchorUsed&&anchorArtifact()){
+    state.run.anchorUsed=true;log.push('The Anchor Artifact snuffs the hazard before it strikes.');dmg=0;
+  }else{
+    const guard=Math.min(.9,hazardSeverityReduction()+partySkillTotal(party,'hazard_guard_pct')+relicSpecialTotal('hazard_guard_pct')+synergyValueFor('hazard_guard_pct'));
+    dmg=Math.round(dmg*(1-guard));
+    let shield=state.run.shield||0;const abs=Math.min(shield,dmg);shield-=abs;dmg-=abs;state.run.shield=shield;
+    if(abs>0)log.push(`Relic wards absorb ${fmt(abs)} of the hazard.`);
+    if(dmg>0){
+      const per=dmg/Math.max(1,party.length);
+      party.forEach(h=>{h.hp=Math.max(0,Math.round(h.hp-per));if(h.hp<=0)h.downedUntil=Date.now()+recoveryMs();});
+      log.push(`The hazard deals ${fmt(dmg)} damage across the party.`);
+    }
+  }
+  if(Math.random()<hz.bonusChance){
+    const c=rand(5)+2;
+    if(hz.bonusType==='coins'){state.resources.coins+=c;log.push(`You scavenge ${c} stray Coins.`);}
+    else{state.resources.crystals+=c;log.push(`Stray Crystals found in the rubble: +${c}.`);}
+  }
+  state.run.nodeState={type:'hazard',resolved:true,log};
+  save();render();
+}
+function ensureShopOffers(){
+  if(state.run.nodeState&&state.run.nodeState.type==='shop')return;
+  const boosted=!!state.pendingShopBoost;
+  const offers=[0,1,2].map((_,i)=>{
+    const rarity=(boosted&&i===0)?'epic':weightedRarity();const relic=genRelic(rarity);
+    const priceBase=10+15*RARITIES.find(x=>x.id===rarity).mult;
+    relic.price=Math.max(4,Math.round(priceBase*(1-merchantPriceReduction())));
+    return relic;
+  });
+  if(boosted){state.pendingShopBoost=false;flash('Shop Boost consumed — an Epic Relic is guaranteed here.');}
+  state.run.nodeState={type:'shop',offers};
+}
+function buyShopOffer(idx){
+  const off=state.run.nodeState.offers[idx];if(!off||off.bought)return;
+  if(state.resources.coins<off.price)return flash('Not enough Coins');
+  state.resources.coins-=off.price;off.bought=true;
+  state.relics.push({id:'rl'+(state.nextId++),name:off.name,type:off.type,rarity:off.rarity,dmg:off.dmg,hp:off.hp,special:off.special,equipped:equippedRelics().length<relicSlotCap()});
+  save();render();
+}
+function pickCombatReward(idx){
+  const ns=state.run.nodeState;if(!ns||!ns.rewardOptions)return;
+  const r=ns.rewardOptions[idx];if(!r)return;
+  state.relics.push({id:'rl'+(state.nextId++),name:r.name,type:r.type,rarity:r.rarity,dmg:r.dmg,hp:r.hp,special:r.special,equipped:equippedRelics().length<relicSlotCap()});
+  ns.rewardChosen=true;flash(`${r.name} added to the vault.`);save();render();
+}
+function skipCombatReward(){
+  const ns=state.run.nodeState;if(!ns)return;
+  ns.rewardChosen=true;save();render();
+}
+function advanceNode(){state.run.pos++;state.run.nodeState=null;state.run.hazardType=undefined;autoResolveSingleOption();save();render();}
+function sealRift(){
+  const diff=currentDiff();
+  const fastClear=(state.run.bossRounds||99)<=6;
+  const tokens=Math.round(diff.tokenBase*(fastClear?sealTokenBonus():1)*(state.run.hardcore?1.5:1));
+  let gotDetector=false;
+  if(Math.random()<diff.detectorChance+detectorDropBonus()){
+    state.detectors.push({id:'d'+(state.nextId++),tier:state.run.endless?'ascendant':diff.id});gotDetector=true;
+  }
+  state.resources.tokens+=tokens;
+  state.sealedCount++;state.triageUsedThisCycle=false;
+  refreshRecruitPool();
+  if(state.run.endless){
+    const newCycle=(state.run.cycle||0)+1;
+    if(newCycle>(state.bestEndlessCycle||0))state.bestEndlessCycle=newCycle;
+    state.run.cycle=newCycle;
+    const extra=buildLayers(endlessDiffForCycle(newCycle));
+    state.run.layers=state.run.layers.concat(extra);
+    state.run.pos=state.run.layers.length-extra.length;
+    state.run.nodeState=null;state.run.bossRounds=undefined;state.run.bossPreview=undefined;state.run.hazardType=undefined;
+    autoResolveSingleOption();
+    state.run.sealed={tokens,fastClear,gotDetector,continuing:true,cycle:newCycle};
+    save();render();
+    return;
+  }
+  state.run.sealed={tokens,fastClear,gotDetector};
+  save();render();
+}
+function continueEndless(){state.run.sealed=null;save();render();}
+function retreatNow(){
+  if(!ui.confirmRetreat){ui.confirmRetreat=true;render();setTimeout(()=>{ui.confirmRetreat=false;render();},3000);return;}
+  ui.confirmRetreat=false;
+  state.run=null;flash('Retreated — loot kept, no Seal Tokens earned.');save();render();
+}
+function finishRun(){state.run=null;save();render();}
+
+/* ---------------- render ---------------- */
+function setTab(t){ui.tab=t;render();}
+function setTermTab(t){ui.termTab=t;render();}
+
+function render(){
+  const app=document.getElementById('app');
+  let html;
+  if(!state||!state.guildName){
+    html=renderRegister();
+  }else if(state.run){
+    html=renderTopbar()+renderRun();
+  }else{
+    let body=renderTopbar();
+    body+=`<div class="tabs">
+      <button class="tab ${ui.tab==='rift'?'active':''}" onclick="setTab('rift')">Rift Hall</button>
+      <button class="tab ${ui.tab==='terminal'?'active':''}" onclick="setTab('terminal')">Guild Terminal</button>
+      <button class="tab ${ui.tab==='roster'?'active':''}" onclick="setTab('roster')">Roster</button>
+    </div>`;
+    if(ui.tab==='rift')body+=renderRiftHall();
+    else if(ui.tab==='terminal')body+=renderTerminal();
+    else body+=renderRoster();
+    html=body;
+  }
+  app.innerHTML=html;
+  const logEl=app.querySelector('.log');
+  if(logEl)logEl.scrollTop=logEl.scrollHeight;
+}
+
+function renderRegister(){
+  return `<div class="register">
+    <div class="crest" style="width:56px;height:62px;margin:0 auto 18px;font-size:1.3rem">G</div>
+    <h1>Found Your Guild</h1>
+    <p class="muted">Register a name, then send heroes into the Rifts to seal them for Coins, Crystals and Tokens.</p>
+    <input id="guildNameInput" maxlength="24" placeholder="Guild name..." onkeydown="if(event.key==='Enter')foundGuild()">
+    <div style="margin-top:16px"><button class="btn primary" onclick="foundGuild()">Found the Guild</button></div>
+  </div>`;
+}
+
+function renderTopbar(){
+  const r=state.resources;
+  return `<div class="topbar">
+    <div class="guildname">
+      <div class="crest">G</div>
+      <div><h1>${escapeHtml(state.guildName)}</h1><div class="tag">${state.sealedCount} Rifts Sealed</div></div>
+    </div>
+    <div class="resbar">
+      <div class="chip"><span class="dot" style="background:var(--gold)"></span>Coins <b>${fmt(r.coins)}</b></div>
+      <div class="chip"><span class="dot" style="background:var(--crystal)"></span>Crystals <b>${fmt(r.crystals)}</b></div>
+      <div class="chip"><span class="dot" style="background:var(--token)"></span>Tokens <b>${fmt(r.tokens)}</b></div>
+      <a class="chip" href="compendium.html" target="_blank" style="text-decoration:none">📖 Compendium</a>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function dismissOnboarding(){state.onboarded=true;save();render();}
+function renderRiftHall(){
+  let out='';
+  if(!state.onboarded){
+    out+=`<div class="panel" style="margin-bottom:16px;border-color:var(--rift)">
+      <h3 style="color:var(--rift);margin-bottom:8px">Welcome to the Guild</h3>
+      <p class="small muted">A quick rundown before your first descent:</p>
+      <ul class="small muted" style="margin:8px 0 0;padding-left:18px;line-height:1.7">
+        <li>Every Rift attempt rolls you a one-run <b style="color:var(--text)">Champion</b> — a random Rank F-S fighter that joins for free.</li>
+        <li>Bring up to 3 heroes from your <b style="color:var(--text)">Roster</b> alongside them — recruit more at the Guild Terminal.</li>
+        <li>Most floors fork into two paths — <b style="color:var(--text)">Combat, Elite, Shop, or Hazard</b> — pick your risk.</li>
+        <li>A level 3+ hero unlocks a one-use <b style="color:var(--text)">Party Ability</b> before each fight — a real tactical choice, not just numbers.</li>
+        <li>Spend Crystals in <b style="color:var(--text)">Guild Management</b> to permanently strengthen your whole guild.</li>
+        <li>Cleared the three fixed Rifts? The <b style="color:var(--text)">Endless Rift</b> climbs forever until you retreat or wipe — the long-term chase.</li>
+      </ul>
+      <button class="btn primary" style="margin-top:12px" onclick="dismissOnboarding()">Got it</button>
+    </div>`;
+  }
+  out+=`<div class="grid g3">`;
+  DIFFICULTIES.forEach(d=>{
+    out+=`<div class="panel diffcard" onclick="openAssembly('${d.id}')">
+      <h3>${d.name}</h3>
+      <div class="small muted">${d.floors} floors · ${d.power} power recommended</div>
+      <div class="rewards">
+        <span class="mono" style="color:var(--gold)">${d.coin[0]}-${d.coin[1]}c</span>
+        <span class="mono" style="color:var(--crystal)">${d.crystal[0]}-${d.crystal[1]}◆</span>
+        <span class="mono" style="color:var(--token)">~${d.tokenBase}t</span>
+      </div>
+    </div>`;
+  });
+  out+=`</div>`;
+  out+=`<div class="panel diffcard" style="margin-top:14px;border-color:var(--token)" onclick="openAssembly('endless')">
+    <h3 style="color:var(--token)">Endless Rift</h3>
+    <div class="small muted">Starts at Ascendant power and climbs +35% per cycle — retreat or wipe to stop. Best depth reached: Cycle ${state.bestEndlessCycle||0}.</div>
+    <div class="rewards"><span class="mono muted">Scaling loot every cycle</span></div>
+  </div>`;
+  if(ui.pendingDiff)out+=renderAssembly();
+  return out;
+}
+
+function renderAssembly(){
+  const diff=pendingDiff();
+  const champ=ui.pendingChampion;
+  const champColor=RANK_COLOR[champ.rank];
+  let out=`<div class="panel" style="margin-top:16px">
+    <h3 style="margin-bottom:10px">Assemble your party — ${diff.name}</h3>
+    <div class="small" style="color:${champColor};font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px">Your Champion — Rank ${champ.rank}</div>
+    <div class="herocard" style="border-color:${champColor};margin-bottom:16px">
+      ${heroCardInner(champ,{badge:champ.name[0],color:champColor})}
+    </div>
+    <div class="grid g4">`;
+  state.heroes.forEach(h=>{
+    const down=isDowned(h);
+    const cls=CLASSES.find(c=>c.id===h.clsId);
+    const picked=ui.pendingHeroIds.includes(h.id);
+    out+=`<div class="herocard ${picked?'picked':''} ${down?'down':''}" style="border-color:${RANK_COLOR[h.rank]}" ${down?'':`onclick="toggleHeroPick('${h.id}')"`}>
+      ${heroCardInner(h,cls)}
+      ${down?`<div class="small" style="color:var(--hazard);margin-top:6px">Recovering: ${timeLeft(h.downedUntil)}</div>`:''}
+    </div>`;
+  });
+  out+=`</div>`;
+  if(ui.pendingRelicOptions.length){
+    out+=`<h3 style="margin:16px 0 10px;font-size:.95rem">Choose a starting Relic (Relic Storage)</h3><div class="grid g3">`;
+    ui.pendingRelicOptions.forEach((r,idx)=>{
+      const chosen=ui.pendingRelicChoiceIdx===idx;
+      out+=`<div class="shopitem" style="cursor:pointer;${chosen?'outline:2px solid var(--rift)':''}" onclick="pickRelicOption(${idx})">
+        <div class="rtype">${r.type} · ${RARITIES.find(x=>x.id===r.rarity).name}</div>
+        <div style="font-weight:600">${r.name}</div>
+        <div class="small mono muted">${relicDesc(r)}</div>
+      </div>`;
+    });
+    out+=`</div>`;
+  }
+  const selected=[champ,...ui.pendingHeroIds.map(id=>state.heroes.find(h=>h.id===id))].filter(Boolean);
+  if(selected.length){
+    const partyPower=selected.reduce((s,h)=>s+powerOf(h),0);
+    const ratio=diff.recPower?partyPower/diff.recPower:1;
+    const readiness=ratio>=.9?{label:'Ready',color:'var(--rift)'}:ratio>=.6?{label:'Risky',color:'var(--gold)'}:{label:'Dangerous',color:'var(--hazard)'};
+    const wounded=selected.filter(h=>h.hp/maxHp(h)<.4).map(h=>h.name.split(' ')[0]);
+    out+=`<div class="small" style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="muted">Party Power</span><b class="mono">${partyPower}</b><span class="muted">/ ${diff.recPower} recommended</span>
+      <span style="color:${readiness.color};font-weight:600">${readiness.label}</span>
+    </div>`;
+    if(wounded.length)out+=`<div class="small" style="color:var(--hazard);margin-top:6px">Warning: ${wounded.join(', ')} ${wounded.length>1?'are':'is'} badly wounded.</div>`;
+  }
+  out+=`<label class="small" style="margin-top:14px;display:flex;align-items:center;gap:8px;cursor:pointer;color:${ui.pendingHardcore?'var(--hazard)':'inherit'}">
+    <input type="checkbox" ${ui.pendingHardcore?'checked':''} onchange="toggleHardcore()">
+    <b>Hardcore</b> — a wipe permanently loses your roster heroes, but Coins/Crystals/Seal Tokens earned are +50%.
+  </label>`;
+  out+=`<div style="margin-top:12px;display:flex;gap:10px">
+    <button class="btn primary" onclick="enterRift()">Enter the Rift${ui.pendingHardcore?' (Hardcore)':''}</button>
+    <button class="btn ghost" onclick="cancelAssembly()">Cancel</button>
+  </div></div>`;
+  return out;
+}
+function toggleHardcore(){ui.pendingHardcore=!ui.pendingHardcore;render();}
+
+function timeLeft(ts){
+  const ms=ts-Date.now();if(ms<=0)return'ready';
+  const s=Math.ceil(ms/1000);return `${Math.floor(s/60)}m ${s%60}s`;
+}
+
+function heroCardInner(h,cls){
+  const isChamp=!!h.isChampion;
+  const rankColor=RANK_COLOR[h.rank];
+  const traitClass=NEG_TRAITS.includes(h.trait)?'neg':(POS_TRAITS.includes(h.trait)?'pos':'neu');
+  const pct=Math.round(100*h.hp/maxHp(h));
+  const innateLine=h.innateKind?`<div class="small" style="color:${rankColor};margin-top:2px">${describeSkill({kind:h.innateKind,value:h.innateValue})}</div>`:'';
+  return `<div class="row">
+      <div class="badge" style="background:${cls.color}">${cls.badge}</div>
+      <div><div class="name">${h.name}</div><div class="small" style="color:${rankColor}">Rank ${h.rank} · Lv${h.level}</div></div>
+    </div>
+    <div class="bar"><i style="width:${pct}%;background:${pct<35?'var(--hazard)':'var(--rift)'}"></i></div>
+    <div class="small mono muted" style="margin-top:4px">${h.hp}/${maxHp(h)} HP · ${dmgOf(h)} DMG</div>
+    ${innateLine}
+    ${isChamp
+      ?`<p class="small muted" style="margin:4px 0 0;font-style:italic">${h.flavor}</p>`
+      :`<div class="small mono muted" style="margin-top:2px">${(h.level||1)>=10?'MAX LEVEL':`XP ${h.xp||0}/${xpToNext(h.level||1)}`}${(h.skillPoints||0)>0?` · <span style="color:var(--rift)">${h.skillPoints} SP</span>`:''}</div><span class="trait ${traitClass}">${h.trait||'Steadfast'}</span>`}`;
+}
+
+const BUILD_KINDS=['dmg_pct','hp_pct','first_round_pct','escalate_pct','mend_pct','hazard_guard_pct','dodge_pct','wipe_guard','boss_alpha_strike'];
+function renderBuildSummary(h){
+  const trait=TRAIT_TABLE[h.trait]||{};
+  const lines=BUILD_KINDS.map(k=>{
+    let v=heroSkillTotal(h,k);
+    if(k==='dmg_pct')v+=trait.dmg||0;
+    if(k==='hp_pct')v+=trait.hp||0;
+    return{k,v};
+  }).filter(x=>x.v>0);
+  if(!lines.length)return'';
+  return `<div class="small muted" style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">
+    <b style="color:var(--rift)">Build Summary</b> (trait + skills + innate)<br>
+    ${lines.map(x=>describeSkill({kind:x.k,value:x.v})).join(' · ')}
+  </div>`;
+}
+function renderSkillTree(h){
+  const tree=CLASS_SKILLS[h.clsId]||[];
+  const tiers={1:[],2:[],3:[]};
+  tree.forEach(n=>tiers[n.tier].push(n));
+  const anySkill=h.skills&&Object.values(h.skills).some(Boolean);
+  let out=`<div class="skilltree">
+    ${renderBuildSummary(h)}
+    <div class="small muted" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span>Skill Points available: <b class="mono" style="color:var(--rift)">${h.skillPoints||0}</b></span>
+      ${anySkill?`<button class="btn ghost small" onclick="respecHero('${h.id}')">Respec (50c)</button>`:''}
+    </div>`;
+  [1,2,3].forEach(t=>{
+    out+=`<div class="skirow">`;
+    tiers[t].forEach(n=>{
+      const owned=!!(h.skills&&h.skills[n.id]);
+      const prereqOk=!n.requires.length||n.requires.every(r=>h.skills&&h.skills[r]);
+      const levelOk=(h.level||1)>=n.reqLevel;
+      const locked=!owned&&(!prereqOk||!levelOk);
+      const canAfford=(h.skillPoints||0)>=n.cost;
+      let status;
+      if(owned)status='Learned';
+      else if(!levelOk)status=`Requires Level ${n.reqLevel}`;
+      else if(!prereqOk)status='Requires prior skill(s)';
+      else status=`Cost ${n.cost} SP`;
+      out+=`<div class="skill ${owned?'owned':''} ${locked?'locked':''}">
+        <div class="sn">${n.name}</div>
+        <div class="small muted">${describeSkill(n)}</div>
+        <div class="small muted">${status}</div>
+        ${!owned&&!locked?`<button class="btn" ${canAfford?'':'disabled'} onclick="learnSkill('${h.id}','${n.id}')">Learn</button>`:''}
+      </div>`;
+    });
+    out+=`</div>`;
+  });
+  out+=`</div>`;
+  return out;
+}
+
+function renderRun(){
+  const run=state.run;
+  const diff=currentDiff();
+  let out=`<div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <h2 style="font-size:1.05rem">${diff.name}${run.endless?` · Cycle ${(run.cycle||0)+1}`:''}${run.hardcore?' <span style="color:var(--hazard);font-size:.7em;letter-spacing:.08em">☠ HARDCORE</span>':''}</h2>
+      <div class="small mono muted">Shield ${fmt(run.shield||0)}</div>
+    </div>
+    <div class="pathrow">`;
+  run.layers.forEach((layer,i)=>{
+    const chosenType=run.chosen[i];
+    const single=layer.options.length===1;
+    let label,color,extra='';
+    if(chosenType){
+      label=NODE_ICON[chosenType];color=NODE_COLOR[chosenType];
+    }else if(i===run.pos){
+      label='?';color='var(--muted2)';extra='fork';
+    }else if(single){
+      label=NODE_ICON[layer.options[0]];color=NODE_COLOR[layer.options[0]];
+    }else if(cartographyUnlocked()){
+      label=layer.options.map(o=>NODE_ICON[o]).join('');color='var(--muted2)';
+    }else{
+      label='?';color='var(--muted)';
+    }
+    out+=`<div class="node-ic ${i===run.pos?'cur':''} ${i<run.pos?'past':''} ${extra}" style="font-size:${label.length>1?'.6rem':'.78rem'};border-color:${color};color:${color}">${label}</div>`;
+    if(i<run.layers.length-1)out+=`<div class="node-link"></div>`;
+  });
+  out+=`</div>`;
+
+  if(run.sealed){
+    if(run.sealed.continuing){
+      out+=`<h3 style="color:var(--rift)">Floor Sealed — Cycle ${run.sealed.cycle}</h3>
+        <p class="small">+${fmt(run.sealed.tokens)} Rift Seal Tokens${run.sealed.fastClear?' (fast-clear bonus)':''}.${run.sealed.gotDetector?' A Rift Detector dropped.':''} The rift deepens...</p>
+        <div style="display:flex;gap:10px">
+          <button class="btn primary" onclick="continueEndless()">Descend Further</button>
+          <button class="btn ghost" onclick="finishRun()">Bank Progress &amp; Leave</button>
+        </div>`;
+    }else{
+      out+=`<h3 style="color:var(--rift)">Rift Sealed!</h3>
+        <p class="small">+${fmt(run.sealed.tokens)} Rift Seal Tokens${run.sealed.fastClear?' (fast-clear bonus applied)':''}.${run.sealed.gotDetector?' A Rift Detector dropped — sell it at the Auction.':''}</p>
+        <button class="btn primary" onclick="finishRun()">Return to the Guild</button>`;
+    }
+  }else{
+    const curType=run.chosen[run.pos];
+    if(!curType){
+      out+=renderChoicePanel(run.layers[run.pos].options);
+    }else if(curType==='combat'||curType==='elite'||curType==='boss'){
+      out+=renderCombatPanel(curType);
+    }else if(curType==='shop'){
+      out+=renderShopPanel();
+    }else{
+      out+=renderHazardPanel();
+    }
+    out+=`<div style="margin-top:14px"><button class="btn ${ui.confirmRetreat?'danger':'danger ghost'}" onclick="retreatNow()">${ui.confirmRetreat?'Click again to confirm Retreat':'Retreat'}</button></div>`;
+  }
+  out+=`</div>`;
+  return out;
+}
+
+function renderChoicePanel(options){
+  const title={combat:'Rift Encounter',elite:'Elite Encounter',shop:'Rift Hallway Shop',hazard:'Environmental Hazard'};
+  const blurb={combat:'A guaranteed fight — steady Coins, Crystals and XP.',elite:'A tougher fight. Better loot, and the only source of bonus Crystal drops.',shop:'No fight. Spend Coins on Relics and Detectors.',hazard:'No fight, but risk taking damage — a chance at bonus Crystals.'};
+  let out=`<h3 style="margin-bottom:4px">Choose Your Path</h3><p class="small muted" style="margin-bottom:12px">Two hallways branch ahead — pick one.</p><div class="grid g2">`;
+  options.forEach(o=>{
+    out+=`<div class="panel diffcard" onclick="chooseNode('${o}')">
+      <h3 style="color:${NODE_COLOR[o]};font-size:1rem">${title[o]}</h3>
+      <p class="small muted" style="margin-top:6px">${blurb[o]}</p>
+    </div>`;
+  });
+  out+=`</div>`;
+  return out;
+}
+
+function renderCombatPanel(kind){
+  const isBoss=kind==='boss',isElite=kind==='elite';
+  const run=state.run;const party=currentParty();
+  const ns=run.nodeState;
+  const title=isBoss?'Rift Boss':(isElite?'Elite Encounter':'Rift Encounter');
+  const sub=isBoss?'Seal the floor by defeating this Warden.':(isElite?'A tougher foe guards richer spoils.':'Clear the room to press deeper.');
+  const engageLabel=isBoss?'Engage the Warden':(isElite?'Engage the Elite':'Engage');
+  let out=`<div class="combatants">
+    <div class="party"><h3 style="font-size:.85rem;color:var(--muted)">Your Party</h3>`;
+  party.forEach(h=>{
+    const pct=Math.round(100*h.hp/maxHp(h));
+    out+=`<div class="mini-hero"><span class="mono small">${h.name.split(' ')[0]}</span><div class="bar"><i style="width:${pct}%;background:${h.hp<=0?'var(--hazard)':'var(--rift)'}"></i></div><span class="mono small">${h.hp}/${maxHp(h)}</span></div>`;
+  });
+  out+=`</div><div class="monster"><h3 style="color:${isElite?'var(--elite)':'var(--hazard)'}">${title}</h3>
+    <p class="small muted">${sub}</p></div>
+  </div>`;
+  if(isBoss&&!ns){
+    ensureBossPreview();
+    const bp=run.bossPreview;
+    out+=`<div class="panel" style="margin-bottom:12px;background:var(--surface2)">
+      <div style="font-weight:600">${bp.monster.name}</div>
+      <div class="small mono muted">${fmt(bp.monster.hp)} HP · ${fmt(bp.monster.dmg)} DMG</div>
+      <div class="small" style="color:var(--elite);margin-top:6px">${bp.mechanic.name} — ${bp.mechanic.desc}</div>
+    </div>`;
+  }
+  if(!ns){
+    const alive=party.filter(h=>!isDowned(h)&&h.hp>0);
+    const avail=availableAbilities(alive);
+    if(avail.length){
+      out+=`<div class="small muted" style="margin-bottom:6px">Party Ability (one use, this fight only):</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        ${avail.map(r=>`<button class="btn ${ui.selectedAbility===r?'primary':''}" onclick="selectAbility('${r}')">${ABILITIES[r].name}</button>`).join('')}
+      </div>`;
+      if(ui.selectedAbility&&avail.includes(ui.selectedAbility)){
+        out+=`<p class="small muted" style="margin-bottom:10px">${ABILITIES[ui.selectedAbility].desc}</p>`;
+        if(ui.selectedAbility==='cleric'&&alive.every(h=>h.hp>=maxHp(h)))out+=`<p class="small" style="color:var(--gold);margin-top:-6px;margin-bottom:10px">The party is already at full health — Blessing would do nothing this fight.</p>`;
+      }
+    }
+    out+=`<button class="btn primary" onclick="engageCombat('${kind}')">${engageLabel}</button>`;
+  }else{
+    const shown=ns.resolving?(ns.revealedCount||0):ns.log.length;
+    out+=`<div class="log">${ns.log.slice(0,shown).map(l=>`<div>${l}</div>`).join('')}</div>`;
+    if(ns.resolving)out+=`<div class="small muted" style="margin-top:8px">Resolving…</div>`;
+    else if(ns.won&&ns.kind==='boss')out+=`<div style="margin-top:12px"><button class="btn primary" onclick="sealRift()">Seal the Rift</button></div>`;
+    else if(ns.won&&ns.rewardOptions&&!ns.rewardChosen)out+=renderRewardChoice(ns.rewardOptions);
+    else if(ns.won)out+=`<div style="margin-top:12px"><button class="btn primary" onclick="advanceNode()">Continue</button></div>`;
+    else out+=`<div style="margin-top:12px"><button class="btn danger" onclick="finishRun()">Return to the Guild</button></div>`;
+  }
+  return out;
+}
+
+function renderRewardChoice(options){
+  let out=`<div style="margin-top:14px"><h3 style="font-size:.95rem;margin-bottom:8px">Choose a Spoil of War</h3><div class="grid g2">`;
+  options.forEach((o,idx)=>{
+    out+=`<div class="shopitem" style="cursor:pointer" onclick="pickCombatReward(${idx})">
+      <div class="rtype">${o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
+      <div style="font-weight:600">${o.name}</div>
+      <div class="small mono muted">${relicDesc(o)}</div>
+    </div>`;
+  });
+  out+=`</div><button class="btn ghost" style="margin-top:10px" onclick="skipCombatReward()">Skip</button></div>`;
+  return out;
+}
+
+function renderHazardPanel(){
+  ensureHazardPreview();
+  const run=state.run;const ns=run.nodeState;const hz=run.hazardType;
+  let out=`<h3 style="color:var(--token)">${hz.name}</h3><p class="small muted">${hz.desc}</p>`;
+  if(!ns||!ns.resolved){
+    out+=`<button class="btn primary" onclick="pushThroughHazard()">Push Through</button>`;
+  }else{
+    out+=`<div class="log">${ns.log.map(l=>`<div>${l}</div>`).join('')}</div>
+    <div style="margin-top:12px"><button class="btn primary" onclick="advanceNode()">Continue</button></div>`;
+  }
+  return out;
+}
+
+function renderShopPanel(){
+  ensureShopOffers();
+  const offers=state.run.nodeState.offers;
+  let out=`<h3 style="color:var(--gold)">Rift Hallway Shop</h3><p class="small muted">Relics and Detectors only — hero upgrades wait back at the Terminal.</p>
+    <div class="grid g3">`;
+  offers.forEach((o,idx)=>{
+    out+=`<div class="shopitem">
+      <div class="rtype">${o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
+      <div style="font-weight:600">${o.name}</div>
+      <div class="small mono muted">${relicDesc(o)}</div>
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <span class="mono" style="color:var(--gold)">${o.price}c</span>
+        <button class="btn" ${o.bought?'disabled':''} onclick="buyShopOffer(${idx})">${o.bought?'Bought':'Buy'}</button>
+      </div>
+    </div>`;
+  });
+  out+=`</div><div style="margin-top:14px"><button class="btn primary" onclick="advanceNode()">Move On</button></div>`;
+  return out;
+}
+
+function renderTerminal(){
+  let out=`<div class="subtabs">
+    <button class="subtab ${ui.termTab==='recruits'?'active':''}" onclick="setTermTab('recruits')">Hero Recruits</button>
+    <button class="subtab ${ui.termTab==='auction'?'active':''}" onclick="setTermTab('auction')">Rift Auction</button>
+    <button class="subtab ${ui.termTab==='management'?'active':''}" onclick="setTermTab('management')">Guild Management</button>
+  </div>`;
+  if(ui.termTab==='recruits')out+=renderRecruits();
+  else if(ui.termTab==='auction')out+=renderAuction();
+  else out+=renderManagement();
+  return out;
+}
+
+function renderRecruits(){
+  let out=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="small muted">Roster ${state.heroes.length} / ${heroSlotCap()}</div>
+    <button class="btn" onclick="refreshRecruitPool();save();render()">Refresh Pool</button>
+  </div><div class="grid g4">`;
+  state.recruitPool.forEach(h=>{
+    const cls=CLASSES.find(c=>c.id===h.clsId);const rank=RANKS.find(r=>r.id===h.rank);
+    out+=`<div class="herocard" style="border-color:${RANK_COLOR[h.rank]}">${heroCardInner(h,cls)}
+      <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+        <span class="mono" style="color:var(--gold)">${rank.cost}c</span>
+        <button class="btn" onclick="recruitHero('${h.id}')">Recruit</button>
+      </div></div>`;
+  });
+  out+=`</div>`;
+  return out;
+}
+
+function renderAuction(){
+  let out=`<div class="panel"><h3 style="font-size:.95rem;margin-bottom:8px">Relics & Detectors</h3>`;
+  if(!state.relics.length&&!state.detectors.length)out+=`<p class="small muted">Nothing in the vault yet — find Relics and Rift Detectors while running Rifts.</p>`;
+  state.relics.forEach(r=>{
+    const rarity=RARITIES.find(x=>x.id===r.rarity);
+    const rlvl=r.level||1;const maxed=rlvl>=RELIC_MAX_LEVEL;
+    const upCost=maxed?0:Math.round(15*rarity.mult*rlvl);
+    out+=`<div class="relicrow">
+      <div class="badge" style="background:${rarity.color}">${r.type[0]}</div>
+      <div style="flex:1;min-width:140px"><div style="font-weight:600;font-size:.86rem">${r.name}${rlvl>1?` +${rlvl-1}`:''}</div><div class="small muted">${r.type} · ${rarity.name} · +${r.dmg} DMG / +${r.hp} Shield${r.special?` · ${r.special.label}`:''}</div></div>
+      <button class="btn ${r.equipped?'primary':''}" onclick="toggleEquip('${r.id}')">${r.equipped?'Equipped':'Equip'}</button>
+      ${!maxed?`<button class="btn ghost" onclick="upgradeRelic('${r.id}')">Upgrade (${upCost}◆)</button>`:''}
+      ${!r.equipped?`<button class="btn" onclick="sellRelic('${r.id}')">Sell</button>`:''}
+      ${!r.equipped&&recycleUnlocked()?`<button class="btn ghost" onclick="scrapRelic('${r.id}')">Scrap</button>`:''}
+    </div>`;
+  });
+  state.detectors.forEach(d=>{
+    out+=`<div class="relicrow">
+      <div class="badge" style="background:var(--token)">D</div>
+      <div style="flex:1;min-width:140px"><div style="font-weight:600;font-size:.86rem">Rift Detector</div><div class="small muted">${DIFFICULTIES.find(x=>x.id===d.tier).name} tier</div></div>
+      <button class="btn" onclick="sellDetector('${d.id}')">Auction</button>
+      ${!state.pendingShopBoost?`<button class="btn ghost" onclick="useDetectorForShopBoost('${d.id}')">Use for Shop Boost</button>`:''}
+    </div>`;
+  });
+  if(state.pendingShopBoost)out+=`<p class="small" style="color:var(--rift)">Shop Boost armed — guaranteed Epic Relic on your next Rift shop.</p>`;
+  out+=`<p class="small muted" style="margin-top:10px">Auction fee: ${Math.round(Math.max(.05,.15-brokerFeeReduction())*100)}%${blackMarketUnlocked()?' · Black Market bonus active on Detectors':''}</p></div>`;
+  return out;
+}
+
+function renderManagement(){
+  let out=`<div class="grid g4">`;
+  BRANCHES.forEach(b=>{
+    out+=`<div class="branch panel"><h3>${b.name}</h3><div class="sub">${b.sub}</div>`;
+    b.nodes.forEach(n=>{
+      const key=`${b.id}.${n.id}`;const cur=lvl(key);const maxed=cur>=n.max;const capOwned=hasCap(key);
+      out+=`<div class="node">
+        <div class="nn">${n.name}</div>
+        <div class="pip-row">${Array.from({length:n.max},(_,i)=>`<span class="pip ${i<cur?'on':''}"></span>`).join('')}</div>
+        <div class="small muted">${n.effect(cur)}</div>`;
+      if(!maxed){
+        const cost=n.costBase+n.costStep*cur;
+        out+=`<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+          <span class="mono small" style="color:var(--crystal)">${cost}◆</span>
+          <button class="btn" onclick="upgradeNode('${b.id}','${n.id}')">Upgrade</button></div>`;
+      }else if(n.cap){
+        out+=`<div class="cap"><div class="cn">${n.cap.name}${capOwned?' ✓':''}</div><div class="small muted">${n.cap.desc}</div>`;
+        if(!capOwned)out+=`<div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+          <span class="mono small" style="color:var(--crystal)">${n.cap.cost}◆</span>
+          <button class="btn" onclick="buyCap('${b.id}','${n.id}')">Unlock</button></div>`;
+        out+=`</div>`;
+      }else{
+        out+=`<div class="small" style="color:var(--rift);margin-top:6px">Maxed</div>`;
+      }
+      out+=`</div>`;
+    });
+    out+=`</div>`;
+  });
+  out+=`</div><div style="margin-top:16px"><button class="btn ${ui.confirmReset?'danger':'ghost'}" onclick="resetGuild()">${ui.confirmReset?'Click again to confirm reset':'Reset Guild'}</button></div>`;
+  return out;
+}
+
+function setRosterSort(v){ui.rosterSort=v;render();}
+function setRosterFilter(v){ui.rosterFilter=v;render();}
+function renderRoster(){
+  let out=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap">
+    <div class="small muted">Roster ${state.heroes.length} / ${heroSlotCap()}</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select class="btn" onchange="setRosterFilter(this.value)">
+        <option value="all" ${ui.rosterFilter==='all'?'selected':''}>Role: All</option>
+        ${CLASSES.map(c=>`<option value="${c.id}" ${ui.rosterFilter===c.id?'selected':''}>Role: ${c.name}</option>`).join('')}
+      </select>
+      <select class="btn" onchange="setRosterSort(this.value)">
+        <option value="level" ${ui.rosterSort==='level'?'selected':''}>Sort: Level</option>
+        <option value="power" ${ui.rosterSort==='power'?'selected':''}>Sort: Power</option>
+        <option value="class" ${ui.rosterSort==='class'?'selected':''}>Sort: Class</option>
+        <option value="name" ${ui.rosterSort==='name'?'selected':''}>Sort: Name</option>
+      </select>
+      ${fieldTriageAvailable()?`<button class="btn ${state.triageUsedThisCycle?'':'primary'}" ${state.triageUsedThisCycle?'disabled':''} onclick="fieldTriageAction()">Field Triage${state.triageUsedThisCycle?' (used)':''}</button>`:''}
+    </div>
+  </div><div class="grid g4">`;
+  let heroes=[...state.heroes];
+  if(ui.rosterFilter&&ui.rosterFilter!=='all')heroes=heroes.filter(h=>h.clsId===ui.rosterFilter);
+  if(ui.rosterSort==='level')heroes.sort((a,b)=>(b.level||1)-(a.level||1));
+  else if(ui.rosterSort==='power')heroes.sort((a,b)=>powerOf(b)-powerOf(a));
+  else if(ui.rosterSort==='class')heroes.sort((a,b)=>a.clsId.localeCompare(b.clsId));
+  else heroes.sort((a,b)=>a.name.localeCompare(b.name));
+  heroes.forEach(h=>{
+    const cls=CLASSES.find(c=>c.id===h.clsId);const down=isDowned(h);
+    const expanded=ui.expandedHeroId===h.id;
+    const poolCls=CLASS_POOL.find(c=>c.id===h.poolId);
+    const canEvolve=(h.level||1)>=10&&poolCls&&evolutionTarget(poolCls);
+    const confirmingDismiss=ui.confirmDismiss===h.id;
+    out+=`<div class="herocard ${down?'down':''}" style="border-color:${RANK_COLOR[h.rank]}">${heroCardInner(h,cls)}
+      <div class="small mono muted" style="margin-top:2px">Power ${powerOf(h)}</div>
+      ${down?`<div class="small" style="color:var(--hazard);margin-top:6px">Recovering: ${timeLeft(h.downedUntil)}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        ${NEG_TRAITS.includes(h.trait)&&lvl('ops.trait')>0?`<button class="btn ghost small" onclick="scrubTrait('${h.id}')">Scrub Trait (30c)</button>`:''}
+        <button class="btn ghost small" onclick="rerollTrait('${h.id}')">Reroll Trait (60c)</button>
+        ${canEvolve?`<button class="btn ghost small" style="color:var(--rift)" onclick="evolveHero('${h.id}')">Evolve (${RANKS.find(r=>r.id===evolutionTarget(poolCls).rank).cost} crystals)</button>`:''}
+        <button class="btn ghost small" onclick="toggleHeroSkills('${h.id}')">${expanded?'Hide Skills':`Skills${(h.skillPoints||0)>0?` (${h.skillPoints})`:''}`}</button>
+        <button class="btn ghost small" style="color:${confirmingDismiss?'var(--hazard)':'inherit'}" onclick="dismissHero('${h.id}')">${confirmingDismiss?'Confirm Dismiss?':'Dismiss'}</button>
+      </div>
+      ${expanded?renderSkillTree(h):''}
+    </div>`;
+  });
+  out+=`</div>`;
+  return out;
+}
+
+function selfCheck(){
+  const errors=[];
+  if(CLASS_POOL.length!==50)errors.push(`CLASS_POOL has ${CLASS_POOL.length} entries, expected 50`);
+  const ids=CLASS_POOL.map(c=>c.id);
+  const dupes=[...new Set(ids.filter((id,i)=>ids.indexOf(id)!==i))];
+  if(dupes.length)errors.push(`Duplicate CLASS_POOL ids: ${dupes.join(', ')}`);
+  CLASS_POOL.forEach(c=>{
+    if(!CLASSES.find(x=>x.id===c.role))errors.push(`${c.id} has unknown role "${c.role}"`);
+    if(!CLASS_SKILLS[c.role])errors.push(`${c.id}'s role "${c.role}" has no CLASS_SKILLS tree`);
+    if(!CHAMP_KIND_BASE[c.kind])errors.push(`${c.id} has unknown kind "${c.kind}"`);
+    if(!RANKS.find(r=>r.id===c.rank))errors.push(`${c.id} has unknown rank "${c.rank}"`);
+    if(!RELIC_TYPES.includes(c.type))errors.push(`${c.id} has unknown type "${c.type}"`);
+  });
+  RELIC_SPECIALS.forEach(s=>{if(!BUILD_KINDS.includes(s.kind))errors.push(`RELIC_SPECIALS has unknown kind "${s.kind}"`);});
+  Object.entries(SYNERGY_BONUS).forEach(([type,s])=>{
+    if(!RELIC_TYPES.includes(type))errors.push(`SYNERGY_BONUS has unknown type "${type}"`);
+    if(!BUILD_KINDS.includes(s.kind))errors.push(`SYNERGY_BONUS.${type} has unknown kind "${s.kind}"`);
+  });
+  if(RANKS.length!==7)errors.push(`RANKS has ${RANKS.length} entries, expected 7`);
+  if(Object.keys(CLASS_SKILLS).length!==CLASSES.length)errors.push('CLASS_SKILLS role count does not match CLASSES');
+  if(errors.length){
+    console.error('Guilds System self-check failed:',errors);
+    const banner=document.createElement('div');
+    banner.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#4a1414;color:#ffb4a8;font:12px monospace;padding:10px;z-index:999;max-height:30vh;overflow:auto;white-space:pre-wrap';
+    banner.textContent='Self-check failed:\n'+errors.join('\n');
+    document.body.appendChild(banner);
+  }
+  return errors;
+}
+selfCheck();
+load();render();
+</script>
