@@ -103,6 +103,7 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:v
   <nav class="nav">
     <a href="#classes">Classes</a>
     <a href="#skilltrees">Skill Trees</a>
+    <a href="#traits">Traits</a>
     <a href="#abilities">Party Abilities</a>
     <a href="#relics">Relics &amp; Items</a>
     <a href="#bestiary">Monsters &amp; Hazards</a>
@@ -122,8 +123,27 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:v
 
   <section id="skilltrees">
     <h2>Skill Trees</h2>
-    <p class="lede">A recruited hero's category decides its tree. Every tree shares the same shape — two generic Tier-1 nodes, two category-flavored Tier-2 nodes, one capstone requiring both — so only the flavor changes per category.</p>
+    <p class="lede">A recruited hero's category decides its tree. Every tree shares the same shape — two generic Tier-1 nodes, three category-flavored Tier-2 nodes (only two of which gate the capstone — the third is an optional pick), one capstone requiring the original two — so only the flavor changes per category. Total cost to learn everything is 8 Skill Points; a hero earns 9 over levels 1-10 (1 per level-up), leaving 1 SP of intentional flexibility at max level.</p>
     <div class="grid g2" id="skillTrees"></div>
+  </section>
+
+  <section id="traits">
+    <h2>Traits</h2>
+    <p class="lede">Every recruited hero rolls one trait on recruitment (rerollable for 60 Coins): a flat stat modifier layered on top of its class, skills, and innate. 6 traits are universal (rollable for any role); 5 more are role-exclusive — one per role, each a double-edged bonus+drawback pair reflecting that role's flavor, and only rollable for a hero of that role. Roll odds: 22% negative (universal), 28% positive (universal), 12% role-exclusive, 38% none ("Steadfast"). The Trait Management Office (Guild Management) lets a hero scrub any negative or role-exclusive trait for 30 Coins once unlocked.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Trait</th><th>Pool</th><th>Effect</th></tr>
+      <tr><td>Battle-Hardened</td><td>Universal (+)</td><td class="mono">+10% damage</td></tr>
+      <tr><td>Swift</td><td>Universal (+)</td><td class="mono">+5% damage</td></tr>
+      <tr><td>Iron Skin</td><td>Universal (+)</td><td class="mono">+15% HP</td></tr>
+      <tr><td>Frail</td><td>Universal (−)</td><td class="mono">-15% HP</td></tr>
+      <tr><td>Reckless</td><td>Universal (−)</td><td class="mono">-5% damage, -5% HP</td></tr>
+      <tr><td>Slothful</td><td>Universal (−)</td><td class="mono">-10% damage</td></tr>
+      <tr><td>Juggernaut</td><td>Warrior-only</td><td class="mono">+10% hazard guard, -8% dodge chance</td></tr>
+      <tr><td>Deadeye</td><td>Ranger-only</td><td class="mono">+15% first-strike damage, -8% HP</td></tr>
+      <tr><td>Overtuned</td><td>Mage-only</td><td class="mono">+3%/round escalating damage, -10% HP</td></tr>
+      <tr><td>Zealous Mercy</td><td>Cleric-only</td><td class="mono">+4% HP mend/round, -6% damage</td></tr>
+      <tr><td>Glass Dagger</td><td>Rogue-only</td><td class="mono">+10% dodge chance, -8% hazard guard</td></tr>
+    </table></div>
   </section>
 
   <section id="abilities">
@@ -358,35 +378,40 @@ const CLASS_SKILLS={
   {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.10,name:'Vanguard Strike',requires:['Honed Edge']},
   {tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.10,name:'Shield Wall',requires:['Thick Hide']},
-  {tier:3,reqLevel:7,cost:2,kind:'wipe_guard',value:.25,name:'Last Stand',requires:['Vanguard Strike','Shield Wall']},
+  {tier:2,reqLevel:5,cost:1,kind:'hazard_guard_pct',value:.08,name:'Battle Instinct',requires:[]},
+  {tier:3,reqLevel:7,cost:3,kind:'wipe_guard',value:.25,name:'Last Stand',requires:['Vanguard Strike','Shield Wall']},
  ],
  ranger:[
   {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.12,name:'Focused Shot',requires:['Honed Edge']},
   {tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Light-Footed',requires:['Thick Hide']},
-  {tier:3,reqLevel:7,cost:2,kind:'first_round_pct',value:.35,name:'Dead Eye',requires:['Focused Shot','Light-Footed']},
+  {tier:2,reqLevel:5,cost:1,kind:'escalate_pct',value:.03,name:'Sustained Aim',requires:[]},
+  {tier:3,reqLevel:7,cost:3,kind:'first_round_pct',value:.35,name:'Dead Eye',requires:['Focused Shot','Light-Footed']},
  ],
  mage:[
   {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Arcane Buildup',requires:['Honed Edge']},
   {tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Ward Sigil',requires:['Thick Hide']},
-  {tier:3,reqLevel:7,cost:2,kind:'boss_alpha_strike',value:1,name:'Cataclysm',requires:['Arcane Buildup','Ward Sigil']},
+  {tier:2,reqLevel:5,cost:1,kind:'dodge_pct',value:.08,name:'Arcane Slip',requires:[]},
+  {tier:3,reqLevel:7,cost:3,kind:'boss_alpha_strike',value:1,name:'Cataclysm',requires:['Arcane Buildup','Ward Sigil']},
  ],
  cleric:[
   {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {tier:2,reqLevel:4,cost:1,kind:'dmg_pct',value:.10,name:'Smite',requires:['Honed Edge']},
   {tier:2,reqLevel:4,cost:1,kind:'mend_pct',value:.05,name:'Mending Chant',requires:['Thick Hide']},
-  {tier:3,reqLevel:7,cost:2,kind:'mend_pct',value:.10,name:'Guardian Angel',requires:['Smite','Mending Chant']},
+  {tier:2,reqLevel:5,cost:1,kind:'hazard_guard_pct',value:.08,name:'Ward of Mercy',requires:[]},
+  {tier:3,reqLevel:7,cost:3,kind:'mend_pct',value:.10,name:'Guardian Angel',requires:['Smite','Mending Chant']},
  ],
  rogue:[
   {tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Momentum',requires:['Honed Edge']},
   {tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.12,name:'Evasion',requires:['Thick Hide']},
-  {tier:3,reqLevel:7,cost:2,kind:'dmg_pct',value:.20,name:'Shadow Strike',requires:['Momentum','Evasion']},
+  {tier:2,reqLevel:5,cost:1,kind:'first_round_pct',value:.10,name:'Opening Gambit',requires:[]},
+  {tier:3,reqLevel:7,cost:3,kind:'dmg_pct',value:.20,name:'Shadow Strike',requires:['Momentum','Evasion']},
  ],
 };
 const BRANCHES=[
@@ -394,7 +419,7 @@ const BRANCHES=[
    {name:'Roster Expansion',max:5,effect:'+2 hero slots / level',cap:'Elite Barracks — set a Guild Mentor; new recruits join one level higher.'},
    {name:'Medical Bay',max:5,effect:'-10% recovery time / level',cap:'Field Triage — once per rift cycle, instantly heal the whole team.'},
    {name:'Tactical Drilling',max:5,effect:'+3% HP/DMG in Rifts / level',cap:"Vanguard Order — a fight's first strike deals +25% bonus damage."},
-   {name:'Trait Management Office',max:3,effect:'Scrub negative traits for Coins',cap:null},
+   {name:'Trait Management Office',max:3,effect:'Scrub traits · -10% skill respec cost / level',cap:null},
  ]},
  {name:'Infrastructure Branch',sub:'Rift Efficiency & Yield',nodes:[
    {name:'Crystal Amplifiers',max:5,effect:'+5% Crystal yield / level',cap:'Crystal Resonance — Rift Bosses drop a bonus Pure Crystal cache.'},

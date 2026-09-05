@@ -86,6 +86,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--rift);outline-o
 .trait.pos{background:var(--rift-dim);color:var(--rift)}
 .trait.neg{background:var(--hazard-dim);color:var(--hazard)}
 .trait.neu{background:var(--surface3);color:var(--muted)}
+.trait.role{background:var(--token-dim);color:var(--token)}
 
 /* ---- rift run ---- */
 .pathrow{display:flex;gap:8px;align-items:center;overflow-x:auto;padding:6px 2px 16px}
@@ -160,7 +161,28 @@ const RARITIES=[
 ];
 const POS_TRAITS=['Battle-Hardened','Swift','Iron Skin'];
 const NEG_TRAITS=['Frail','Reckless','Slothful'];
-const TRAIT_TABLE={'Battle-Hardened':{dmg:.1},'Swift':{dmg:.05},'Iron Skin':{hp:.15},'Frail':{hp:-.15},'Reckless':{dmg:-.05,hp:-.05},'Slothful':{dmg:-.1}};
+/* Trait kind-keys use the same BUILD_KINDS vocabulary as skills/items/relics
+   so they flow through heroSkillTotal for free — see heroSkillTotal below. */
+const TRAIT_TABLE={
+ 'Battle-Hardened':{dmg_pct:.1},'Swift':{dmg_pct:.05},'Iron Skin':{hp_pct:.15},
+ 'Frail':{hp_pct:-.15},'Reckless':{dmg_pct:-.05,hp_pct:-.05},'Slothful':{dmg_pct:-.1},
+};
+/* Role-exclusive double-edged traits: one per role, pairing a thematic bonus
+   with a thematic drawback. Rolled only for their own role (see pickTraitName)
+   on top of the universal pool above. */
+const ROLE_TRAITS={
+ warrior:{name:'Juggernaut'},
+ ranger:{name:'Deadeye'},
+ mage:{name:'Overtuned'},
+ cleric:{name:'Zealous Mercy'},
+ rogue:{name:'Glass Dagger'},
+};
+TRAIT_TABLE['Juggernaut']={hazard_guard_pct:.10,dodge_pct:-.08};
+TRAIT_TABLE['Deadeye']={first_round_pct:.15,hp_pct:-.08};
+TRAIT_TABLE['Overtuned']={escalate_pct:.03,hp_pct:-.10};
+TRAIT_TABLE['Zealous Mercy']={mend_pct:.04,dmg_pct:-.06};
+TRAIT_TABLE['Glass Dagger']={dodge_pct:.10,hazard_guard_pct:-.08};
+function isRoleTrait(name){return Object.values(ROLE_TRAITS).some(t=>t.name===name);}
 const RELIC_TYPES=['Ember','Frost','Verdant','Umbral','Arcane'];
 /* Each type nudges (doesn't lock) which power domain a relic's special favors —
    see domainForType. Domains map 1:1 onto the 5 types so no new type/taxonomy
@@ -295,35 +317,40 @@ const CLASS_SKILLS={
   {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {id:'vanguard',tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.10,name:'Vanguard Strike',requires:['edge']},
   {id:'shieldwall',tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.10,name:'Shield Wall',requires:['hide']},
-  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'wipe_guard',value:.25,name:'Last Stand',requires:['vanguard','shieldwall']},
+  {id:'instinct',tier:2,reqLevel:5,cost:1,kind:'hazard_guard_pct',value:.08,name:'Battle Instinct',requires:[]},
+  {id:'cap',tier:3,reqLevel:7,cost:3,kind:'wipe_guard',value:.25,name:'Last Stand',requires:['vanguard','shieldwall']},
  ],
  ranger:[
   {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {id:'focus',tier:2,reqLevel:4,cost:1,kind:'first_round_pct',value:.12,name:'Focused Shot',requires:['edge']},
   {id:'lightfoot',tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Light-Footed',requires:['hide']},
-  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'first_round_pct',value:.35,name:'Dead Eye',requires:['focus','lightfoot']},
+  {id:'sustain',tier:2,reqLevel:5,cost:1,kind:'escalate_pct',value:.03,name:'Sustained Aim',requires:[]},
+  {id:'cap',tier:3,reqLevel:7,cost:3,kind:'first_round_pct',value:.35,name:'Dead Eye',requires:['focus','lightfoot']},
  ],
  mage:[
   {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {id:'buildup',tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Arcane Buildup',requires:['edge']},
   {id:'ward',tier:2,reqLevel:4,cost:1,kind:'hazard_guard_pct',value:.10,name:'Ward Sigil',requires:['hide']},
-  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'boss_alpha_strike',value:1,name:'Cataclysm',requires:['buildup','ward']},
+  {id:'slip',tier:2,reqLevel:5,cost:1,kind:'dodge_pct',value:.08,name:'Arcane Slip',requires:[]},
+  {id:'cap',tier:3,reqLevel:7,cost:3,kind:'boss_alpha_strike',value:1,name:'Cataclysm',requires:['buildup','ward']},
  ],
  cleric:[
   {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {id:'smite',tier:2,reqLevel:4,cost:1,kind:'dmg_pct',value:.10,name:'Smite',requires:['edge']},
   {id:'mending',tier:2,reqLevel:4,cost:1,kind:'mend_pct',value:.05,name:'Mending Chant',requires:['hide']},
-  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'mend_pct',value:.10,name:'Guardian Angel',requires:['smite','mending']},
+  {id:'ward2',tier:2,reqLevel:5,cost:1,kind:'hazard_guard_pct',value:.08,name:'Ward of Mercy',requires:[]},
+  {id:'cap',tier:3,reqLevel:7,cost:3,kind:'mend_pct',value:.10,name:'Guardian Angel',requires:['smite','mending']},
  ],
  rogue:[
   {id:'edge',tier:1,reqLevel:2,cost:1,kind:'dmg_pct',value:.08,name:'Honed Edge',requires:[]},
   {id:'hide',tier:1,reqLevel:2,cost:1,kind:'hp_pct',value:.08,name:'Thick Hide',requires:[]},
   {id:'momentum',tier:2,reqLevel:4,cost:1,kind:'escalate_pct',value:.03,name:'Momentum',requires:['edge']},
   {id:'evasion',tier:2,reqLevel:4,cost:1,kind:'dodge_pct',value:.12,name:'Evasion',requires:['hide']},
-  {id:'cap',tier:3,reqLevel:7,cost:2,kind:'dmg_pct',value:.20,name:'Shadow Strike',requires:['momentum','evasion']},
+  {id:'gambit',tier:2,reqLevel:5,cost:1,kind:'first_round_pct',value:.10,name:'Opening Gambit',requires:[]},
+  {id:'cap',tier:3,reqLevel:7,cost:3,kind:'dmg_pct',value:.20,name:'Shadow Strike',requires:['momentum','evasion']},
  ],
 };
 /* Champion system: every rift roll grants a one-run guest fighter drawn from
@@ -444,7 +471,7 @@ const BRANCHES=[
    {id:'roster',name:'Roster Expansion',max:5,costBase:30,costStep:20,effect:l=>`+${l*2} hero slots`,cap:{name:'Elite Barracks',cost:400,desc:'Set a Guild Mentor — new recruits join one level higher.'}},
    {id:'medical',name:'Medical Bay',max:5,costBase:25,costStep:18,effect:l=>`-${l*10}% recovery time`,cap:{name:'Field Triage',cost:350,desc:'Once per rift cycle, instantly heal the whole team.'}},
    {id:'drill',name:'Tactical Drilling',max:5,costBase:35,costStep:22,effect:l=>`+${l*3}% HP/DMG in Rifts`,cap:{name:'Vanguard Order',cost:450,desc:"A fight's first strike deals +25% bonus damage."}},
-   {id:'trait',name:'Trait Management Office',max:3,costBase:40,costStep:30,effect:l=>l>0?'Scrub negative traits for Coins':'Locked',cap:null},
+   {id:'trait',name:'Trait Management Office',max:3,costBase:40,costStep:30,effect:l=>l>0?`Scrub traits · -${l*10}% skill respec cost`:'Locked',cap:null},
  ]},
  {id:'infra',name:'Infrastructure Branch',sub:'Rift Efficiency & Yield',nodes:[
    {id:'crystal',name:'Crystal Amplifiers',max:5,costBase:30,costStep:20,effect:l=>`+${l*5}% Crystal yield`,cap:{name:'Crystal Resonance',cost:400,desc:'Rift Bosses drop a bonus Pure Crystal cache.'}},
@@ -513,6 +540,7 @@ function guildTierInfo(){
 function tacticalBonus(){return 1+0.03*lvl('ops.drill');}
 function medicalRecoveryReduction(){return Math.min(.5,0.10*lvl('ops.medical'));}
 function fieldTriageAvailable(){return hasCap('ops.medical');}
+function respecFeeReduction(){return Math.min(.5,.10*lvl('ops.trait'));}
 function heroSlotCap(){return 4+2*lvl('ops.roster');}
 function guildMentor(){return hasCap('ops.roster');}
 function crystalYieldBonus(){return 1+0.05*lvl('infra.crystal');}
@@ -532,8 +560,8 @@ function recycleUnlocked(){return lvl('res.recycle')>0;}
 function cartographyUnlocked(){return lvl('res.cart')>0;}
 function relicSlotCap(){return 3+lvl('res.vault');}
 
-function maxHp(h){return Math.round(h.baseHp*(1+(TRAIT_TABLE[h.trait]?.hp||0))*(1+heroSkillTotal(h,'hp_pct')));}
-function dmgOf(h){return Math.round(h.baseDmg*(1+(TRAIT_TABLE[h.trait]?.dmg||0))*(1+heroSkillTotal(h,'dmg_pct')));}
+function maxHp(h){return Math.round(h.baseHp*(1+heroSkillTotal(h,'hp_pct')));}
+function dmgOf(h){return Math.round(h.baseDmg*(1+heroSkillTotal(h,'dmg_pct')));}
 function isDowned(h){return h.downedUntil&&h.downedUntil>Date.now();}
 function powerOf(h){return dmgOf(h)*2+Math.round(maxHp(h)/3);}
 function heroSkillTotal(h,kind){
@@ -541,6 +569,7 @@ function heroSkillTotal(h,kind){
   if(h.skills){const tree=CLASS_SKILLS[h.clsId]||[];tree.forEach(n=>{if(n.kind===kind&&h.skills[n.id])s+=n.value;});}
   if(h.innateKind===kind)s+=h.innateValue||0;
   s+=heroItemTotal(h,kind);
+  s+=TRAIT_TABLE[h.trait]?.[kind]||0;
   return s;
 }
 function partySkillTotal(party,kind){return party.reduce((s,h)=>s+heroSkillTotal(h,kind),0);}
@@ -607,13 +636,13 @@ function weightedRarity(){
   return'common';
 }
 function weightedRank(){const total=RANKS.reduce((s,r)=>s+r.weight,0);let r=rand(total);for(const rk of RANKS){if(r<rk.weight)return rk.id;r-=rk.weight;}return'F';}
-function pickTraitName(){const r=Math.random();if(r<.28)return pick(NEG_TRAITS);if(r<.62)return pick(POS_TRAITS);return null;}
+function pickTraitName(role){const r=Math.random();if(r<.22)return pick(NEG_TRAITS);if(r<.50)return pick(POS_TRAITS);if(r<.62)return ROLE_TRAITS[role].name;return null;}
 function genHero(rankId,levelHint){
   const rank=RANKS.find(r=>r.id===rankId)||RANKS.find(r=>r.id===weightedRank());
   const rankIdx=RANKS.findIndex(rk=>rk.id===rank.id);
   const cls=pick(CLASS_POOL.filter(c=>c.rank===rank.id));
   const roleCls=CLASSES.find(c=>c.id===cls.role);
-  const trait=pickTraitName();
+  const trait=pickTraitName(cls.role);
   const s=1+0.08*(levelHint-1);
   const baseHp=Math.round(roleCls.baseHp*cls.hpRatio*rank.mult*s);
   const baseDmg=Math.round(roleCls.baseDmg*cls.dmgRatio*rank.mult*s);
@@ -720,14 +749,14 @@ function buyCap(bId,nId){
 }
 function scrubTrait(heroId){
   if(lvl('ops.trait')<1)return flash('Unlock the Trait Management Office first');
-  const h=state.heroes.find(x=>x.id===heroId);if(!h||!NEG_TRAITS.includes(h.trait))return;
+  const h=state.heroes.find(x=>x.id===heroId);if(!h||!(NEG_TRAITS.includes(h.trait)||isRoleTrait(h.trait)))return;
   if(state.resources.coins<30)return flash('Need 30 Coins');
   state.resources.coins-=30;h.trait=null;h.hp=maxHp(h);save();render();
 }
 function rerollTrait(heroId){
   const h=state.heroes.find(x=>x.id===heroId);if(!h)return;
   if(state.resources.coins<60)return flash('Need 60 Coins');
-  state.resources.coins-=60;h.trait=pickTraitName();h.hp=Math.min(maxHp(h),h.hp);
+  state.resources.coins-=60;h.trait=pickTraitName(h.clsId);h.hp=Math.min(maxHp(h),h.hp);
   flash(`Rerolled: ${h.trait||'Steadfast'}`);save();render();
 }
 function dismissHero(heroId){
@@ -854,12 +883,14 @@ function learnSkill(heroId,skillId){
   h.skillPoints-=n.cost;h.skills[skillId]=true;save();render();
 }
 function toggleHeroSkills(id){ui.expandedHeroId=ui.expandedHeroId===id?null:id;render();}
+function respecCost(spent){return Math.round((20+10*spent)*(1-respecFeeReduction()));}
 function respecHero(heroId){
   const h=state.heroes.find(x=>x.id===heroId);if(!h||!h.skills)return;
   const spent=Object.values(h.skills).filter(Boolean).length;
   if(spent===0)return;
-  if(state.resources.coins<50)return flash('Need 50 Coins');
-  state.resources.coins-=50;h.skillPoints=(h.skillPoints||0)+spent;h.skills={};
+  const cost=respecCost(spent);
+  if(state.resources.coins<cost)return flash(`Need ${cost} Coins`);
+  state.resources.coins-=cost;h.skillPoints=(h.skillPoints||0)+spent;h.skills={};
   flash('Skills reset.');save();render();
 }
 function fieldTriageAction(){
@@ -1356,7 +1387,7 @@ function timeLeft(ts){
 function heroCardInner(h,cls){
   const isChamp=!!h.isChampion;
   const rankColor=RANK_COLOR[h.rank];
-  const traitClass=NEG_TRAITS.includes(h.trait)?'neg':(POS_TRAITS.includes(h.trait)?'pos':'neu');
+  const traitClass=NEG_TRAITS.includes(h.trait)?'neg':(POS_TRAITS.includes(h.trait)?'pos':(isRoleTrait(h.trait)?'role':'neu'));
   const pct=Math.round(100*h.hp/maxHp(h));
   const innateLine=h.innateKind?`<div class="small" style="color:${rankColor};margin-top:2px">${describeSkill({kind:h.innateKind,value:h.innateValue})}</div>`:'';
   return `<div class="row">
@@ -1373,13 +1404,7 @@ function heroCardInner(h,cls){
 
 const BUILD_KINDS=['dmg_pct','hp_pct','first_round_pct','escalate_pct','mend_pct','hazard_guard_pct','dodge_pct','wipe_guard','boss_alpha_strike'];
 function renderBuildSummary(h){
-  const trait=TRAIT_TABLE[h.trait]||{};
-  const lines=BUILD_KINDS.map(k=>{
-    let v=heroSkillTotal(h,k);
-    if(k==='dmg_pct')v+=trait.dmg||0;
-    if(k==='hp_pct')v+=trait.hp||0;
-    return{k,v};
-  }).filter(x=>x.v>0);
+  const lines=BUILD_KINDS.map(k=>({k,v:heroSkillTotal(h,k)})).filter(x=>x.v>0);
   if(!lines.length)return'';
   return `<div class="small muted" style="margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:6px">
     <b style="color:var(--rift)">Build Summary</b> (trait + skills + innate)<br>
@@ -1395,7 +1420,7 @@ function renderSkillTree(h){
     ${renderBuildSummary(h)}
     <div class="small muted" style="margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span>Skill Points available: <b class="mono" style="color:var(--rift)">${h.skillPoints||0}</b></span>
-      ${anySkill?`<button class="btn ghost small" onclick="respecHero('${h.id}')">Respec (50c)</button>`:''}
+      ${anySkill?`<button class="btn ghost small" onclick="respecHero('${h.id}')">Respec (${respecCost(Object.values(h.skills).filter(Boolean).length)}c)</button>`:''}
     </div>`;
   [1,2,3].forEach(t=>{
     out+=`<div class="skirow">`;
@@ -1901,6 +1926,9 @@ function selfCheck(){
   });
   Object.values(ITEM_CATEGORY_KINDS).flat().forEach(k=>{if(!BUILD_KINDS.includes(k))errors.push(`ITEM_CATEGORY_KINDS has unknown kind "${k}"`);if(!(k in ITEM_KIND_BASE))errors.push(`ITEM_KIND_BASE missing base value for "${k}"`);});
   DUAL_WIELD_CLASSES.forEach(id=>{if(!CLASS_POOL.some(c=>c.id===id))errors.push(`DUAL_WIELD_CLASSES has unknown class id "${id}"`);});
+  Object.entries(CLASS_SKILLS).forEach(([role,tree])=>{tree.forEach(n=>{if(!BUILD_KINDS.includes(n.kind))errors.push(`CLASS_SKILLS.${role}.${n.id} has unknown kind "${n.kind}"`);});});
+  Object.entries(TRAIT_TABLE).forEach(([name,mods])=>{Object.keys(mods).forEach(k=>{if(!BUILD_KINDS.includes(k))errors.push(`TRAIT_TABLE.${name} has unknown kind "${k}"`);});});
+  Object.entries(ROLE_TRAITS).forEach(([role,t])=>{if(!CLASSES.some(c=>c.id===role))errors.push(`ROLE_TRAITS has unknown role "${role}"`);if(!TRAIT_TABLE[t.name])errors.push(`ROLE_TRAITS.${role} trait "${t.name}" missing from TRAIT_TABLE`);});
   if(RANKS.length!==7)errors.push(`RANKS has ${RANKS.length} entries, expected 7`);
   if(Object.keys(CLASS_SKILLS).length!==CLASSES.length)errors.push('CLASS_SKILLS role count does not match CLASSES');
   if(errors.length){
