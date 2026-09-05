@@ -178,6 +178,30 @@ const ITEM_SLOT_LABEL={weapon:'Weapon',trinket:'Trinket'};
 const ITEM_NOUNS={weapon:['Blade','Bow','Staff','Mace','Dagger'],trinket:['Ring','Amulet','Charm','Band','Talisman']};
 const ITEM_KIND_POOL=['dmg_pct','hp_pct','first_round_pct','escalate_pct','mend_pct','hazard_guard_pct','dodge_pct'];
 const ITEM_KIND_BASE={dmg_pct:.12,hp_pct:.12,first_round_pct:.15,escalate_pct:.04,mend_pct:.06,hazard_guard_pct:.12,dodge_pct:.10};
+const MONSTER_SPRITE={
+  goblin:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABfUlEQVR4nO2ZMW7CQBBFDSKHQFyCBqQU4QooSFEqhMQtaChocotIlquIAkXhAoEiBQ0NN4BrYOoZO16vd8JXtP91Y2tnv4aZ2VmTJIQQQgghhBBCCCGEkJholTzLG6wJwbXfn+7ftnT2H2EA0ALQOHvAbv8jXo6eHuv4qEL4n72OvRanH5+h+wuizwAGAC0ATecOe8hz/u1ZmKmvt75cnyw2eo7w6gnRZwADgBaAxtkDvr9OphvOjldhp335Gyzfpb2aX6vfB+qJPgMYALQANHXOTHHO5plyMK1evJ4Mhf0y6NXR9TuLjX7Cu0AIDABaABr7u4Ca9ZPDRZhrZWu2D11hW9//NdFnAAOAFoAmvAfomtfntJoDXBRqvug/6P6viT4DGAC0ADTePUDP/nkma14XpD7XvSnO/qZEnwEMAFoAmjo9QJe17//5gpLZXuKaK3gXsIUBQAtA06Seqr8Rnp01HAp7gCUMAFoAGot6CpoLjDQ0JvoMYADQAtDcAID4PkQ50EBBAAAAAElFTkSuQmCC',
+  orc:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABrklEQVR4nO2bQUoDMRiFp9JbSPEAboqgIKhXECvFZS8hghu3XsGV0EUXQ1HpBVy0C0FBXNQDiHgLUXfC/2dITP9kHpL37UJm0tdH/tdkMq0qQgghhJRKp4XP+Dben1XjWs7B/wM0AC0ATYr68tf45ZFt9PO70BWm71D8DKABaAFo0mdAoOYvrqXnb1ufor3x3PX2j+uZHpIZYIEGoAWgybHO9mbCfO9MtA/2d2X/4sHbXyXWXPwMoAFoAWhaz4Bo3L0AMyAlNAAtAE03fImN0cuXaI/7yvPM+/0Qxc8AGoAWgKb15wHRcB2QFxqAFoBmlXWAv+ZVzY5ODkXbWQconHVDpLhYip8BNAAtAM1fMiCq5q3o5/5OhtQzfRbJcwELNAAtAE1TBnjP+2N/p++X8iN6y8ANm8dy/PpG9rsZZMqE4mcADUALQNOpVM1PBzveG4bb66I9ffpIKmh4+yjaPZUJ768qE1yYATHQALQANE31Ynq3V9fs5OrUe33D+b8kvPfgXsACDUALQLNK/US9AxRLMBNcmAEWaABaABp7BqSnjf8x/VL8DKABaAFofgDYblEAnzKMWgAAAABJRU5ErkJggg==',
+  skelly:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABRUlEQVR4nO2YMQ7CMAxFC+JSDHAFRkYGVg7AETgAawdGRq4AA8eCOVaVxomdr8r/baUl+fryT5wMAyGEEEKisuowx6/x/64a156DLwEagBaAxiNfSebfn2/TYPvdVv5kqjl8BdAAtAA0m94Tjvdb8ny+XLPvvQlfATQALQAN+wDLwZYIDUALQOPeB8zt67IP6E34CqABaAFoup8FZOYn9nkJ7wQ9oQFoAWgs8pX0/qfjIXmp3ee9e39J+AqgAWgBaGrylT3vywxr7wPk2eHxfMlPeB9gCQ1AC0BTkidV5ifGzPYJExlPKPi+aU0IXwE0AC0AjXoN0GbYug+oWIOyhK8AGoAWgMa8D9CuEXMUZF7CNUADDUALQNN8HyCpyGwW631fEr4CaABaABr3O8EOcA1ogQagBaAx7wOc5nQjfAXQALQANH9ih08hv5r+fAAAAABJRU5ErkJggg==',
+  mummy:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABhUlEQVR4nO2aQW7CQAxFJ1U5TPeIU1RCVEBXqL1axApaparUU6DucwSOQbeMJ/IospOvyv/tSJjJ58vjeDykRAghhJCoNGgBKaWbcbzpNzwYH/7voQFoAWgQOSBb87ffs2myZrkvLo0ZHz4CaABaAJo5ckC+5o++kzeH8tKY8eEjgAagBaB5nGBO9T0v39u1+x8vq+zzrruYBd4TPgJoAFoAminqAHV/X9QBT5W9QJ/nhM+vak5gHTAGGoAWgGaKOiBDrnm5hrep2M+r3/cmfATQALQANB51gN7j6/U1/v6zVu+3p+/a83kuYIEGoAWgmbwOkD07ub9/Tld1fDswpVXTPeEjgAagBaDxzwGV9/52o/f0anWBN+EjgAagBaDxzwFFj0/v6RUsfOXUCB8BNAAtAI1HDshq82a5z/oDsvaXdYDcK7y9sg6YFRqAFoDGIweoa744u+vGTT4wnzx7ZE/QAg1AC0Az+7nAwP/6rDAHWKABaAFo3HPATM90I3wE0AC0ADR/L+pGRjbbRtYAAAAASUVORK5CYII=',
+  zombie:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABmUlEQVR4nO2asUpDQRBFN2JvqU0KQUEIWgopoo2tjZZ2FuIHiKVF1Cb4BSL+gIiFgo2NWvgBIRDQzsbW2iLWdwkuj53di8w93bxNdm8uM5Pd914IQgghhPBKiy0ghDBp+HlTzTOWk/1HZABbABtGD4CaP1nehcGt66M/v7zR68aXsn6D+wyQAWwBbGYrrJFV86VxnwEygC2ATY0eAKRqvre2CPHZ+QPEk+8viFtzC1l63GeADGALYFPjLAD7gJfXt6zJdBYwRgawBbCpvg94vh9BvLndqS0BcJ8BMoAtgE2JHgD/+zc76zA4H9X80/4FxP3329T8ei5giQxgC2BjUU9Q86fHVzC48nHZaLLhsA3xlJ6gHmCJDGALYGO+D/i5e8QLq9Yr2OI+A2QAWwCb4vcDxksHEKfO/+PofkEYJM8GWbjPABnAFsDG/CwQ3/ffO8TzforPUdm9f4z7DJABbAFsStQX9IR2B98Jims87hnWz/5SuM8AGcAWwKb4PmBKTTdFPaAkMoAtgI15D6i0phnuM0AGsAWw+QWEjUATtI6opwAAAABJRU5ErkJggg==',
+  slime:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABS0lEQVR4nO2asQ3CMBBFE0TLAIglmASJAVBqaKmYgIoW6ogBkJgkSyAGoCfUdpCPyzn5QvdfF4jjn6/7R3BcFIQQQgghhBBCCPFGOcIcrXH8oBonQ178H6ABaAFocuQrnfHj2nb1w006w3QP7iuABqAFoOmTnzDzUsY3jx5TJLguwuNuj1Ddk/sKoAFoAWh+yUs683HG44xKCD2ind2D4/K1Ss+n7AnuK4AGoAWg+ZaPZObb3SW8wHmbV9HIPcF9BdAAtAA0U+2AOHNVM1eNr5eh51XzDr/faBXZcF8BNAAtAI26B1T7dObjjEtoz+/87htxXwE0AC0AjboH1Kdn+IH2/3+M9dnfiPsKoAFoAWjsa4Ix0hqh9T2B1HO4JqiDBqAFoLG/G4yx7geQyLxfwH0F0AC0ADRD7MGz7guUyKrZfQXQALQAQghB8gGcsjrHmSRzrgAAAABJRU5ErkJggg==',
+  wraith:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABk0lEQVR4nO2bMW6DQBBFwUqf1p0ViS5SegrsEyCXaVNEyQ1yglQ+hVvXvoFduPcF0qb1BULqHdDCsANf1vzXmWWXr6+Z8e6yZBkhxDM54JmN8v5JNS6mHPweoAFoAWjmqAFBzp/OF1XndVXKS6aa3UcADUALQDNFDYjmfPXylDR4/rhsXUoZz30E0AC0ADQPBmMk5fzbx6eBhPG4jwAagBaAxmIeENSA5vYbvVnm/P7wF7a/LqLteXaUQ3IekAINQAtAM2YekLS+l3x/bYPfhWjPs3fZhfsBltAAtAA0yWsB7fq+WNXR9k39HF7YaRXpcB8BNAAtAM2QGmD6v9/KcYGsKfJ566qU7xa5FkiBBqAFoFHPA2SOnq8/0fa+/mjcRwANQAtAo64BMue192trQMf5AFPcRwANQAtAo64BfTnZ915AMqJGcE/QEhqAFoBmSA2QORfdH+g4wxN2VtaIqXEfATQALQCN+fkASceeXthZ1ATrc4B9uI8AGoAWgGb27wU6nmm6z6/FfQTQALQAQghB8g8zH0mhKy1+cAAAAABJRU5ErkJggg==',
+  fire_skull:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABPklEQVR4nO2aTQqDMBCFTekReoeepYvSZVeCl3IfcNV1Ba9S7+AZatczAUvMzxPmfbt0Knk8ZsYkxjXprInPuwwadnNCTn4EaABaAJoc9bfKwT1SwDv8qSLmM4AGoAWgKVFv2z1hUDXfynjtnmA+A2gAWgCaM1qA7glr2BP0XiNrTzCfATQALQBN+b2Afu9rblc5nmY5LrxOMJ8BNAAtAE39dYCu+dh4ZsxnAA1AC0CzpwdEvfe78SHjY9xkfvnIyScZd23wXSJqXWA+A2gAWgCa6usA//qKcfc8bcabvqwe8xlAA9AC0FTvAbrm/8V9QS1NwwygAeYNyH8mOMQ9HOwVFL6XewF3mfVfeCaYAg1AC0BT/n7AknbGl7vmNeYzgAagBaCpcSfv0HeJzWcADUALIIQQQgghhBBCCKnND1yKNRXDaS/7AAAAAElFTkSuQmCC',
+};
+const MONSTER_NAME_SPRITE={'Gloom Stalker':'wraith','Rift Wisp':'fire_skull','Husk Brute':'zombie','Sable Fang':'orc','Ember Whelp':'goblin','Marrow Crawler':'skelly','Hollow Reaver':'mummy','Cinder Moth':'slime'};
+function spriteForMonster(name){const key=MONSTER_NAME_SPRITE[name]||Object.keys(MONSTER_SPRITE)[[...name].reduce((s,c)=>s+c.charCodeAt(0),0)%Object.keys(MONSTER_SPRITE).length];return MONSTER_SPRITE[key];}
+const RELIC_TYPE_ICON={
+  Ember:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAtElEQVR4nGNkIBH8P7XiPzK/Ln41inzz9bWMpJjHRKoDqA1GHcBCSAF6nDOs+YfCbbr3G1WDZjCKekJpYsBDYNQBGGkAI85JBKSmiQEPgVEHMP4vW0ZRnDNMXEGS8jolVhT+gIfAqAMYa9HyKUY+JgDQ45QQQDd/wENg1AEsGPU1hWkCHaDrZ/y5abQuGFwOwGgPUJomCMU5OhjwEBh1AEn9OAYGBgZCdQehOEcHAx4Cow4AAM1dQaLtGn/LAAAAAElFTkSuQmCC',
+  Frost:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAvElEQVR4nGNkIBH8P7XiPzJfOWU1ivy9S2sZSTGPiVQHUBuMOoCFkAL0ONd9GIYin+D+CYW/gIEBRT2hNDHgITDqAIw0gB7npIIEd3cU/gICaWLAQ2DUASw6q/+h5XPqWkAoTQx4CIw6gFFJLxglTtDjjBBYsHMnSerRzR/wEBh1AAt62bwALZ+SmibQAbr+uu600bpgcDkAoz1AaZogFOfoYMBDYNQBJPXjGBgYGAjVHYTiHB0MeAiMOgAAFZA4niVIjj8AAAAASUVORK5CYII=',
+  Verdant:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAvklEQVR4nGNkIBH8P7XiPzJfOWU1ivy9S2sZSTGPiVQHUBuMOoCFkAL0OGeUnIiqIFwChavEEIyinlCaGPAQGHUARhpAj3NSwb3wfyh8QmliwENg1AGMDI8tKYpzhkUShNUgAaWVqH4e8BAYdQCLkrcUigB6PiYE0OOUEEA3f8BDYNQBLOhlM0bZTWKaQAcY+qvXj9YFg8sBGO0BStMEoThHBwMeAqMOIKkfx8DAwKCkRyBNEIhzdDDgITDqAADSVjo7ldGjWwAAAABJRU5ErkJggg==',
+  Arcane:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAv0lEQVR4nGNkIBH8P7XiPzJ/VccEFPnwdScYSTGPiVQHUBuMOoCFkAL0OP+v2IIiH+Z/B02HBYp6QmliwENg1AEYaQA9zkkFYf4X0ETwp4kBD4FRBzD+e61DUZwzbkMvB/CDVRsNUPgDHgKjDmBZnc6DIoCZj/ED9DglBNDNH/AQGHUAC2Z9jVp2k5om0AG6fsb4H6N1weByAEZ7gNI0QSjO0cGAh8CoA0jqxzEwMDCsDMKfJgjFOToY8BAYdQAA2yE4IUf0mnIAAAAASUVORK5CYII=',
+  Umbral:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAuUlEQVR4nGNkIBH8P7XiPzK/Ln41inzz9bWMpJjHRKoDqA1GHcBCSAF6nB/8Losiz+rjjsKvZWBAUU8oTQx4CIw6ACMNoMc5qYDUNDHgITDqAMYDB49SFOeHtlwlSf3vLTtR+AMeAqMOYKzVDEZJA+j5mBBAj1NCAN38AQ+BUQewoJfN6GU3qWkCHaDrr+tOG60LBpcDMNoDlKYJQnGODgY8BEYdQFI/joGBgYFQ3UEoztHBgIfAqAMALbg2Aq/S7twAAAAASUVORK5CYII=',
+};
+const ITEM_SLOT_ICON={
+  weapon:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAqElEQVR4nGNkoBD8//D8PzK/zjIHRb75+lpGfPqZKHUApWDUAYwHDh79T1gZ8cBeXwmFTyhNDHgIjDpg1AGjDmBxsLdGyZcrgyxQyoUr16VRNDjPKKKqAwY8BEYdwEKqhr0ZfSj8puNTUPij7YEh5wCS0wBGnFoy/McrTwAMeAiMOgAjDYT5X0Dho9cF6IDUOEcHAx4Cow7AiL9azWCK8jWpYMBDYNQBAPWgKYy/8Q5mAAAAAElFTkSuQmCC',
+  trinket:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA0UlEQVR4nGNgGAUjHTCSqqFWM/g/Keqbr6/FawcTqQ6gNhh1AAshBf8/PMcb5wcv3sNvQAYDin70NDHgITDqAIw0cODgUYri/NCWqyh8Vh93FH4tA2qaGPAQGHUARhqw00pH4f//ja5iJgoPPc5ryiah8Bm33UHh123xRuEPeAiMOgAjDbR05aHwf2/ZicJvPISaRuwfoMWxHWocs/qgmsfAgGregIfAqAMwywEfbRT+XrQ0UG+njqYDnU8aGPAQGHUARpud1HY/qWC0TTjoHAAA2J40PDfYIeoAAAAASUVORK5CYII=',
+};
+const CHEST_ICON='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAiCAYAAAA6RwvCAAAC30lEQVR4nO2WP0gbYRjGfw0ZgnQIGEEyBBo0klLBP0OkQjkHB5FAwUEKXRwcC2YoODh2EBwcHBwKLXQodBCH4FSwIdDADSYhgvSiONwQPtBAppBB0g7nXe5y/3JW0MEHwn3v87x57rnv7r77niVfpP/yCBB66AA6noL0I7zydu6hMwCPaEaegvQj7CV+/fzTUq+tL/7Xybz8PIMATI2OAlAVwmZ0F5j9zPANMpSKawMheP1mhna9YWhVB85Lqwph8QsUZGJiGIB2fZRMSEVOJQxtCmyclzZl8isVrf2+QaJjEgBDqSbZ6UuoqIYmpxI2zkuTUwnDD6y32TdIdqSjDUIqkdUZspR7YsWB89IqquG329fuGyTy8nevOb5JZHXbZFyzc15apWbxCxQkHN8EoDW+Y6ndOC+tNb5DOP7xtjoOFuSmoV1R9Lxmqd04Ly16XnPsHShI52z+dqSZ9Go3zkurmeqAM5K/igAgdxNkz+bhdM/Q5G7SxnlpcjcJt3798A2io11vwOke+UrYk/PtX3b29w3SuigA2qqYr8T49af3FyfOS6sKQXoyTeRwP3gQ0Ba14y9z5K8iLCz1Ag4pcbLTl7z79t3ovWls0/lRZutkhtb4MAtLkqGlJ9PkXj1n/9B+joGCyEcHyA58u96AWdh4b319P81qmgKgHPSEI9hwOYfvfkRRmq5aVQi2TpJkQiqlYplSsUwmpLJ1krR9Xf3gOyP619PNOBNS2S1cG/Vu4ZqcBCWgVLQv/W5fa98ZWch9YDo7CWh7CfNPR06KOY6d+jPLK4ZfoCCti4Ll9uj7Cf0od+1bADPX39/vN3CQfmRCquXYrjeQuwlyUoycFEPuJixT39/vhoEXNCfkpBi7BQFCUDJY7Xkx37pBEChIVQiqQh/795r79GN0TLK+0kGDrK0vmnZXd0d2pOO4Jg0cRFGajlcSFE4hBgqiKE1jw3tfcHprfINoK+a95nDEPyMcYLIq1G0lAAAAAElFTkSuQmCC';
 /* Equipping 3+ of one element grants that element's own bonus instead of a
    flat number — makes "which element am I building" a real choice. */
 const SYNERGY_BONUS={
@@ -570,6 +594,11 @@ function genItem(rarityId){
   return{name:`${rarity.name} ${noun}`,slot,rarity:rarity.id,kind,value};
 }
 function itemDesc(it){return describeSkill({kind:it.kind,value:it.value});}
+function lootIconHtml(o){
+  const isItem=o.lootType==='item';
+  const src=isItem?ITEM_SLOT_ICON[o.slot]:RELIC_TYPE_ICON[o.type];
+  return src?`<img src="${src}" style="width:36px;height:36px;image-rendering:pixelated;flex:none" alt="">`:'';
+}
 function genLoot(rarityId){return Math.random()<0.5?{...genItem(rarityId),lootType:'item'}:{...genRelic(rarityId),lootType:'relic'};}
 function heroItemTotal(h,kind){return state.items.filter(it=>it.equippedTo===h.id&&it.kind===kind).reduce((s,it)=>s+it.value,0);}
 function genMonster(diff,floorIdx,kind){
@@ -953,7 +982,7 @@ function engageCombat(kind){
     log.push(`+${xpGain} XP to each hero in the fight.`);
     if(!isBoss)rewardOptions=[genLoot(weightedRarity()),genLoot(weightedRarity())];
   }
-  state.run.nodeState={type:'combat',log,won,kind,rounds:round,revealedCount:0,resolving:true,rewardOptions,rewardChosen:false};
+  state.run.nodeState={type:'combat',log,won,kind,rounds:round,revealedCount:0,resolving:true,rewardOptions,rewardChosen:false,monsterName:monster.name};
   save();render();
   startReveal();
 }
@@ -1196,10 +1225,13 @@ function renderAssembly(){
     out+=`<h3 style="margin:16px 0 10px;font-size:.95rem">Choose a starting Relic (Relic Storage)</h3><div class="grid g3">`;
     ui.pendingRelicOptions.forEach((r,idx)=>{
       const chosen=ui.pendingRelicChoiceIdx===idx;
-      out+=`<div class="shopitem" style="cursor:pointer;${chosen?'outline:2px solid var(--rift)':''}" onclick="pickRelicOption(${idx})">
-        <div class="rtype">${r.type} · ${RARITIES.find(x=>x.id===r.rarity).name}</div>
-        <div style="font-weight:600">${r.name}</div>
-        <div class="small mono muted">${relicDesc(r)}</div>
+      out+=`<div class="shopitem" style="cursor:pointer;display:flex;gap:10px;align-items:flex-start;${chosen?'outline:2px solid var(--rift)':''}" onclick="pickRelicOption(${idx})">
+        ${RELIC_TYPE_ICON[r.type]?`<img src="${RELIC_TYPE_ICON[r.type]}" style="width:36px;height:36px;image-rendering:pixelated;flex:none" alt="">`:''}
+        <div>
+          <div class="rtype">${r.type} · ${RARITIES.find(x=>x.id===r.rarity).name}</div>
+          <div style="font-weight:600">${r.name}</div>
+          <div class="small mono muted">${relicDesc(r)}</div>
+        </div>
       </div>`;
     });
     out+=`</div>`;
@@ -1237,7 +1269,7 @@ function renderRelicLoadout(){
   state.relics.forEach(r=>{
     const rarity=RARITIES.find(x=>x.id===r.rarity);
     out+=`<div class="relicrow">
-      <div class="badge" style="background:${rarity.color}">${r.type[0]}</div>
+      <div class="badge" style="background:${rarity.color};padding:3px">${RELIC_TYPE_ICON[r.type]?`<img src="${RELIC_TYPE_ICON[r.type]}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated">`:r.type[0]}</div>
       <div style="flex:1;min-width:140px"><div style="font-weight:600;font-size:.86rem">${r.name}${r.level>1?` +${r.level-1}`:''}</div><div class="small muted">${r.type} · ${rarity.name} · ${relicDesc(r)}</div></div>
       <button class="btn ${r.equipped?'primary':''}" onclick="toggleEquip('${r.id}')">${r.equipped?'Equipped':'Equip'}</button>
     </div>`;
@@ -1357,16 +1389,26 @@ function renderRun(){
 
   if(run.sealed){
     if(run.sealed.continuing){
-      out+=`<h3 style="color:var(--rift)">Floor Sealed — Cycle ${run.sealed.cycle}</h3>
-        <p class="small">+${fmt(run.sealed.tokens)} Rift Seal Tokens${run.sealed.fastClear?' (fast-clear bonus)':''}.${run.sealed.gotDetector?' A Rift Detector dropped.':''} The rift deepens...</p>
-        <div style="display:flex;gap:10px">
+      out+=`<div style="display:flex;gap:14px;align-items:center">
+        <img src="${CHEST_ICON}" style="width:56px;height:56px;image-rendering:pixelated;flex:none" alt="">
+        <div>
+          <h3 style="color:var(--rift)">Floor Sealed — Cycle ${run.sealed.cycle}</h3>
+          <p class="small">+${fmt(run.sealed.tokens)} Rift Seal Tokens${run.sealed.fastClear?' (fast-clear bonus)':''}.${run.sealed.gotDetector?' A Rift Detector dropped.':''} The rift deepens...</p>
+        </div>
+      </div>
+        <div style="display:flex;gap:10px;margin-top:10px">
           <button class="btn primary" onclick="continueEndless()">Descend Further</button>
           <button class="btn ghost" onclick="finishRun()">Bank Progress &amp; Leave</button>
         </div>`;
     }else{
-      out+=`<h3 style="color:var(--rift)">Rift Sealed!</h3>
-        <p class="small">+${fmt(run.sealed.tokens)} Rift Seal Tokens${run.sealed.fastClear?' (fast-clear bonus applied)':''}.${run.sealed.gotDetector?' A Rift Detector dropped — sell it at the Auction.':''}</p>
-        <button class="btn primary" onclick="finishRun()">Return to the Guild</button>`;
+      out+=`<div style="display:flex;gap:14px;align-items:center">
+        <img src="${CHEST_ICON}" style="width:56px;height:56px;image-rendering:pixelated;flex:none" alt="">
+        <div>
+          <h3 style="color:var(--rift)">Rift Sealed!</h3>
+          <p class="small">+${fmt(run.sealed.tokens)} Rift Seal Tokens${run.sealed.fastClear?' (fast-clear bonus applied)':''}.${run.sealed.gotDetector?' A Rift Detector dropped — sell it at the Auction.':''}</p>
+        </div>
+      </div>
+        <button class="btn primary" style="margin-top:10px" onclick="finishRun()">Return to the Guild</button>`;
     }
   }else{
     const curType=run.chosen[run.pos];
@@ -1432,10 +1474,13 @@ function renderCombatPanel(kind){
   if(isBoss&&!ns){
     ensureBossPreview();
     const bp=run.bossPreview;
-    out+=`<div class="panel" style="margin-bottom:12px;background:var(--surface2)">
-      <div style="font-weight:600">${bp.monster.name}</div>
-      <div class="small mono muted">${fmt(bp.monster.hp)} HP · ${fmt(bp.monster.dmg)} DMG</div>
-      <div class="small" style="color:var(--elite);margin-top:6px">${bp.mechanic.name} — ${bp.mechanic.desc}</div>
+    out+=`<div class="panel" style="margin-bottom:12px;background:var(--surface2);display:flex;gap:12px;align-items:center">
+      <img src="${spriteForMonster(bp.monster.name)}" style="width:56px;height:56px;image-rendering:pixelated;flex:none" alt="">
+      <div>
+        <div style="font-weight:600">${bp.monster.name}</div>
+        <div class="small mono muted">${fmt(bp.monster.hp)} HP · ${fmt(bp.monster.dmg)} DMG</div>
+        <div class="small" style="color:var(--elite);margin-top:6px">${bp.mechanic.name} — ${bp.mechanic.desc}</div>
+      </div>
     </div>`;
   }
   if(!ns){
@@ -1454,6 +1499,7 @@ function renderCombatPanel(kind){
     out+=`<button class="btn primary" onclick="engageCombat('${kind}')">${engageLabel}</button>`;
   }else{
     const shown=ns.resolving?(ns.revealedCount||0):ns.log.length;
+    if(ns.monsterName)out+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><img src="${spriteForMonster(ns.monsterName)}" style="width:40px;height:40px;image-rendering:pixelated" alt=""><span class="small muted">${ns.monsterName}</span></div>`;
     out+=`<div class="log">${ns.log.slice(0,shown).map(l=>`<div>${l}</div>`).join('')}</div>`;
     if(ns.resolving)out+=`<div class="small muted" style="margin-top:8px">Resolving…</div>`;
     else if(ns.won&&ns.kind==='boss')out+=`<div style="margin-top:12px"><button class="btn primary" onclick="sealRift()">Seal the Rift</button></div>`;
@@ -1468,10 +1514,13 @@ function renderRewardChoice(options){
   let out=`<div style="margin-top:14px"><h3 style="font-size:.95rem;margin-bottom:8px">Choose a Spoil of War</h3><div class="grid g2">`;
   options.forEach((o,idx)=>{
     const isItem=o.lootType==='item';
-    out+=`<div class="shopitem" style="cursor:pointer" onclick="pickCombatReward(${idx})">
-      <div class="rtype">${isItem?ITEM_SLOT_LABEL[o.slot]:o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
-      <div style="font-weight:600">${o.name}</div>
-      <div class="small mono muted">${isItem?itemDesc(o):relicDesc(o)}</div>
+    out+=`<div class="shopitem" style="cursor:pointer;display:flex;gap:10px;align-items:flex-start" onclick="pickCombatReward(${idx})">
+      ${lootIconHtml(o)}
+      <div>
+        <div class="rtype">${isItem?ITEM_SLOT_LABEL[o.slot]:o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
+        <div style="font-weight:600">${o.name}</div>
+        <div class="small mono muted">${isItem?itemDesc(o):relicDesc(o)}</div>
+      </div>
     </div>`;
   });
   out+=`</div><button class="btn ghost" style="margin-top:10px" onclick="skipCombatReward()">Skip</button></div>`;
@@ -1499,9 +1548,14 @@ function renderShopPanel(){
   offers.forEach((o,idx)=>{
     const isItem=o.lootType==='item';
     out+=`<div class="shopitem">
-      <div class="rtype">${isItem?ITEM_SLOT_LABEL[o.slot]:o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
-      <div style="font-weight:600">${o.name}</div>
-      <div class="small mono muted">${isItem?itemDesc(o):relicDesc(o)}</div>
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        ${lootIconHtml(o)}
+        <div>
+          <div class="rtype">${isItem?ITEM_SLOT_LABEL[o.slot]:o.type} · ${RARITIES.find(x=>x.id===o.rarity).name}</div>
+          <div style="font-weight:600">${o.name}</div>
+          <div class="small mono muted">${isItem?itemDesc(o):relicDesc(o)}</div>
+        </div>
+      </div>
       <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
         <span class="mono" style="color:var(--gold)">${o.price}c</span>
         <button class="btn" ${o.bought?'disabled':''} onclick="buyShopOffer(${idx})">${o.bought?'Bought':'Buy'}</button>
@@ -1552,7 +1606,7 @@ function renderAuction(){
     const rlvl=r.level||1;const maxed=rlvl>=RELIC_MAX_LEVEL;
     const upCost=maxed?0:Math.round(15*rarity.mult*rlvl);
     out+=`<div class="relicrow">
-      <div class="badge" style="background:${rarity.color}">${r.type[0]}</div>
+      <div class="badge" style="background:${rarity.color};padding:3px">${RELIC_TYPE_ICON[r.type]?`<img src="${RELIC_TYPE_ICON[r.type]}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated">`:r.type[0]}</div>
       <div style="flex:1;min-width:140px"><div style="font-weight:600;font-size:.86rem">${r.name}${rlvl>1?` +${rlvl-1}`:''}</div><div class="small muted">${r.type} · ${rarity.name} · +${r.dmg} DMG / +${r.hp} Shield${r.special?` · ${r.special.label}`:''}</div></div>
       <button class="btn ${r.equipped?'primary':''}" onclick="toggleEquip('${r.id}')">${r.equipped?'Equipped':'Equip'}</button>
       ${!maxed?`<button class="btn ghost" onclick="upgradeRelic('${r.id}')">Upgrade (${upCost}◆)</button>`:''}
@@ -1567,7 +1621,7 @@ function renderAuction(){
     const rarity=RARITIES.find(x=>x.id===it.rarity);
     const holder=it.equippedTo?state.heroes.find(h=>h.id===it.equippedTo):null;
     out+=`<div class="relicrow">
-      <div class="badge" style="background:${rarity.color}">${ITEM_SLOT_LABEL[it.slot][0]}</div>
+      <div class="badge" style="background:${rarity.color};padding:3px">${ITEM_SLOT_ICON[it.slot]?`<img src="${ITEM_SLOT_ICON[it.slot]}" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated">`:ITEM_SLOT_LABEL[it.slot][0]}</div>
       <div style="flex:1;min-width:140px"><div style="font-weight:600;font-size:.86rem">${it.name}</div><div class="small muted">${ITEM_SLOT_LABEL[it.slot]} · ${rarity.name} · ${itemDesc(it)}</div></div>
       ${holder?`<span class="small muted">On ${holder.name.split(' the ')[0]}</span>`:`<button class="btn" onclick="sellItem('${it.id}')">Sell</button>`}
     </div>`;
@@ -1625,7 +1679,8 @@ function setRosterFilter(v){ui.rosterFilter=v;render();}
 function dragItem(ev,itemId){ev.dataTransfer.setData('text/plain',itemId);}
 function itemTileHtml(it){
   const rarity=RARITIES.find(r=>r.id===it.rarity);
-  return `<div class="itemtile" draggable="true" ondragstart="dragItem(event,'${it.id}')" style="background:${rarity.color}" title="${it.name} — ${itemDesc(it)}">${ITEM_SLOT_LABEL[it.slot][0]}</div>`;
+  const icon=ITEM_SLOT_ICON[it.slot];
+  return `<div class="itemtile" draggable="true" ondragstart="dragItem(event,'${it.id}')" style="background:${rarity.color}" title="${it.name} — ${itemDesc(it)}">${icon?`<img draggable="false" src="${icon}" style="width:80%;height:80%;object-fit:contain;image-rendering:pixelated;pointer-events:none">`:ITEM_SLOT_LABEL[it.slot][0]}</div>`;
 }
 function dropOnSlot(ev,heroId,slot){
   ev.preventDefault();ev.currentTarget.classList.remove('dragover');
