@@ -180,17 +180,18 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:v
     <p class="small muted">Any owned relic can be spent Crystals on to level up (max level 5) at the Rift Auction — each level adds +15% to its DMG, Shield, and special-effect value. Cost is <span class="mono">15 × rarity multiplier × current level</span> Crystals.</p>
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Items (hero-bound gear)</h3>
-    <p class="small muted">Two slots per roster hero — Weapon and Trinket — set by dragging a tile from the Item Bag onto a slot, either on the Roster tab or mid-rift via the "Inventory &amp; Loadout" panel between encounters. Each item is a single percentage buff to that one hero, at meaningfully higher values than a relic special since it only affects one character. Base values below scale by the same rarity multiplier as relics (×1.0 / ×1.4 / ×1.9).</p>
+    <p class="small muted">Items roll into one of 3 category umbrellas, each drawing from its own stat pool, and are set by dragging a tile from the Item Bag onto a slot — either on the Roster tab or mid-rift via the "Inventory &amp; Loadout" panel between encounters. Each item is a single percentage buff to that one hero, at meaningfully higher values than a relic special since it only affects one character. Base values below scale by the same rarity multiplier as relics (×1.0 / ×1.4 / ×1.9).</p>
     <div class="tablewrap"><table>
-      <tr><th>Effect</th><th>Base Value</th></tr>
-      <tr><td>Damage</td><td class="mono">+12%</td></tr>
-      <tr><td>HP</td><td class="mono">+12%</td></tr>
+      <tr><th>Category</th><th>Effect</th><th>Base Value</th></tr>
+      <tr><td rowspan="3">Weapon</td><td>Damage</td><td class="mono">+12%</td></tr>
       <tr><td>First-strike damage</td><td class="mono">+15%</td></tr>
       <tr><td>Escalating damage (stacking)</td><td class="mono">+4%/round</td></tr>
-      <tr><td>Mends HP each round</td><td class="mono">+6%</td></tr>
+      <tr><td rowspan="3">Armor</td><td>HP</td><td class="mono">+12%</td></tr>
       <tr><td>Hazard severity reduction</td><td class="mono">-12%</td></tr>
-      <tr><td>Dodge chance</td><td class="mono">+10%</td></tr>
+      <tr><td>Mends HP each round</td><td class="mono">+6%</td></tr>
+      <tr><td>Focus</td><td>Dodge chance</td><td class="mono">+10%</td></tr>
     </table></div>
+    <p class="small muted" style="margin-top:8px">Equip slots are per-hero, not fixed: every hero has 1 Weapon slot (2 for a hand-picked list of agile "dual-wield" classes — all 10 Rogues plus Duelist, Blade Dancer, and Zealot), and a number of Gear slots — shared by Armor and Focus items interchangeably — that grows with the hero's Rank: F/E → 1, D/C → 2, B/A → 3, S → 4. Evolving a hero into a higher rank unlocks more Gear slots automatically.</p>
     <p class="small muted" style="margin-top:8px">Wipe-guard and Boss-alpha-strike stay Relic/Skill-only effects — kept off Items by design, since those are binary once-per-fight effects rather than a scaling stat.</p>
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Rift Detectors</h3>
