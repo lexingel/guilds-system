@@ -152,32 +152,36 @@ footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);color:v
       <tr><td><span class="dot" style="background:var(--gold)"></span>Epic</td><td class="mono">×1.9</td><td class="mono">320c</td><td class="mono">8</td></tr>
     </table></div>
 
-    <h3 class="small" style="margin-top:20px;color:var(--text)">Elemental types &amp; synergy</h3>
-    <p class="small muted">Every relic rolls one of five types + a noun (Sigil, Charm, Shard, Idol, Emblem). With Optimal Synergy unlocked, equipping 3+ of the same type grants that type's bonus below — matching a party hero's own elemental type to an equipped relic type adds a further +3% team damage per matched type (Affinity).</p>
+    <h3 class="small" style="margin-top:20px;color:var(--text)">Elemental types, power domains &amp; synergy</h3>
+    <p class="small muted">Every relic rolls one of five types + a noun (Sigil, Charm, Shard, Idol, Emblem). Type isn't just cosmetic — it nudges which <b style="color:var(--text)">power domain</b> the relic's special effect draws from (60% its home domain, 10% each of the other four), so collecting one type reads as leaning into that domain without fully locking you into it. With Optimal Synergy unlocked, equipping 3+ of the same type grants that type's bonus below — matching a party hero's own elemental type to an equipped relic type adds a further +3% team damage per matched type (Affinity).</p>
     <div class="tablewrap"><table>
-      <tr><th>Type</th><th>3-of-a-kind Synergy Bonus</th></tr>
-      <tr><td>Ember</td><td class="mono">+15% team damage</td></tr>
-      <tr><td>Frost</td><td class="mono">+12% dodge chance</td></tr>
-      <tr><td>Verdant</td><td class="mono">Mends 8% of the party's HP pool each round</td></tr>
-      <tr><td>Umbral</td><td class="mono">-15% hazard severity</td></tr>
-      <tr><td>Arcane</td><td class="mono">+4% damage/round (stacking)</td></tr>
+      <tr><th>Type</th><th>Power Domain</th><th>3-of-a-kind Synergy Bonus</th></tr>
+      <tr><td>Ember</td><td>Damage</td><td class="mono">+15% team damage</td></tr>
+      <tr><td>Frost</td><td>Chance</td><td class="mono">+12% dodge chance</td></tr>
+      <tr><td>Verdant</td><td>Heal</td><td class="mono">Mends 8% of the party's HP pool each round</td></tr>
+      <tr><td>Umbral</td><td>Defense</td><td class="mono">-15% hazard severity</td></tr>
+      <tr><td>Arcane</td><td>Drop Rate</td><td class="mono">+10% odds toward Rare/Epic loot</td></tr>
     </table></div>
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Special effects (40% chance per relic)</h3>
+    <p class="small muted">Which effect a relic can roll is filtered by the domain from the roll above.</p>
     <div class="tablewrap"><table>
-      <tr><th>Effect</th><th>Base Value</th></tr>
-      <tr><td>Mends HP each round</td><td class="mono">2%</td></tr>
-      <tr><td>Dodge chance</td><td class="mono">+5%</td></tr>
-      <tr><td>Escalating damage (stacking)</td><td class="mono">+1.5%/round</td></tr>
-      <tr><td>Hazard severity reduction</td><td class="mono">-6%</td></tr>
+      <tr><th>Domain</th><th>Effect</th><th>Base Value</th></tr>
+      <tr><td rowspan="3">Damage</td><td>Escalating damage (stacking)</td><td class="mono">+1.5%/round</td></tr>
       <tr><td>First-strike damage</td><td class="mono">+6%</td></tr>
-      <tr><td>Survive a wipe at % HP (once/rift)</td><td class="mono">8%</td></tr>
       <tr><td>Boss opening-volley damage</td><td class="mono">+30%</td></tr>
+      <tr><td>Heal</td><td>Mends HP each round</td><td class="mono">2%</td></tr>
+      <tr><td>Chance</td><td>Dodge chance</td><td class="mono">+5%</td></tr>
+      <tr><td rowspan="2">Defense</td><td>Hazard severity reduction</td><td class="mono">-6%</td></tr>
+      <tr><td>Survive a wipe at % HP (once/rift)</td><td class="mono">8%</td></tr>
+      <tr><td>Drop Rate</td><td>Odds toward Rare/Epic loot</td><td class="mono">+6%</td></tr>
     </table></div>
     <p class="small muted" style="margin-top:8px">Special-effect relics roll slightly lower base stats (+2 DMG / +6 Shield vs. +3 / +9) to offset the extra effect. All values scale with the relic's rarity multiplier above.</p>
+    <p class="small muted" style="margin-top:8px"><b style="color:var(--text)">Drop Rate</b> is party-wide, stacking from every equipped Drop-Rate special plus the Arcane synergy bonus: it shifts every loot roll (shop offers and combat rewards alike) toward Rare/Epic, and gives a capped chance (up to 50%) of a 3rd reward option instead of the usual 2 after a won fight.</p>
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Relic upgrades</h3>
-    <p class="small muted">Any owned relic can be spent Crystals on to level up (max level 5) at the Rift Auction — each level adds +15% to its DMG, Shield, and special-effect value. Cost is <span class="mono">15 × rarity multiplier × current level</span> Crystals.</p>
+    <p class="small muted">Any owned relic can be spent Crystals on to level up (max level 5) at the Rift Auction — each level adds +15% to its DMG and Shield. Cost is <span class="mono">15 × rarity multiplier × current level</span> Crystals.</p>
+    <p class="small muted" style="margin-top:8px"><b style="color:var(--text)">Power tiers</b> — reaching level 3 is a breakpoint, not just another +15% step: a relic that never rolled a special gets one now (domain-weighted, same as a fresh roll), and from level 3 onward an existing special's value grows at double the normal rate (+30%/level instead of +15%) while DMG/Shield keep growing at the normal rate.</p>
 
     <h3 class="small" style="margin-top:20px;color:var(--text)">Items (hero-bound gear)</h3>
     <p class="small muted">Items roll into one of 3 category umbrellas, each drawing from its own stat pool, and are set by dragging a tile from the Item Bag onto a slot — either on the Roster tab or mid-rift via the "Inventory &amp; Loadout" panel between encounters. Each item is a single percentage buff to that one hero, at meaningfully higher values than a relic special since it only affects one character. Base values below scale by the same rarity multiplier as relics (×1.0 / ×1.4 / ×1.9).</p>

@@ -162,15 +162,25 @@ const POS_TRAITS=['Battle-Hardened','Swift','Iron Skin'];
 const NEG_TRAITS=['Frail','Reckless','Slothful'];
 const TRAIT_TABLE={'Battle-Hardened':{dmg:.1},'Swift':{dmg:.05},'Iron Skin':{hp:.15},'Frail':{hp:-.15},'Reckless':{dmg:-.05,hp:-.05},'Slothful':{dmg:-.1}};
 const RELIC_TYPES=['Ember','Frost','Verdant','Umbral','Arcane'];
+/* Each type nudges (doesn't lock) which power domain a relic's special favors —
+   see domainForType. Domains map 1:1 onto the 5 types so no new type/taxonomy
+   is needed, just a `domain` tag on each existing special. */
 const RELIC_SPECIALS=[
- {kind:'mend_pct',value:.02,label:'Mends 2% HP/round'},
- {kind:'dodge_pct',value:.05,label:'+5% dodge chance'},
- {kind:'escalate_pct',value:.015,label:'+1.5% dmg/round (stacking)'},
- {kind:'hazard_guard_pct',value:.06,label:'-6% hazard severity'},
- {kind:'first_round_pct',value:.06,label:'+6% first-strike damage'},
- {kind:'wipe_guard',value:.08,label:'Relic ward: survive a wipe at 8% HP'},
- {kind:'boss_alpha_strike',value:.3,label:'+30% opening volley vs Bosses'},
+ {kind:'mend_pct',value:.02,domain:'heal',label:'Mends 2% HP/round'},
+ {kind:'dodge_pct',value:.05,domain:'chance',label:'+5% dodge chance'},
+ {kind:'escalate_pct',value:.015,domain:'damage',label:'+1.5% dmg/round (stacking)'},
+ {kind:'hazard_guard_pct',value:.06,domain:'defense',label:'-6% hazard severity'},
+ {kind:'first_round_pct',value:.06,domain:'damage',label:'+6% first-strike damage'},
+ {kind:'wipe_guard',value:.08,domain:'defense',label:'Relic ward: survive a wipe at 8% HP'},
+ {kind:'boss_alpha_strike',value:.3,domain:'damage',label:'+30% opening volley vs Bosses'},
+ {kind:'loot_rarity_pct',value:.06,domain:'droprate',label:'+6% odds toward Rare/Epic loot'},
 ];
+const TYPE_DOMAIN={Ember:'damage',Verdant:'heal',Frost:'chance',Umbral:'defense',Arcane:'droprate'};
+function domainForType(type){
+  const home=TYPE_DOMAIN[type];
+  if(Math.random()<.6)return home;
+  return pick(Object.values(TYPE_DOMAIN).filter(d=>d!==home));
+}
 /* Items: hero-bound gear distinct from party-wide Relics — reuses the same
    kind vocabulary so they flow through heroSkillTotal for free.
    3 category umbrellas: Weapon (offense), Armor (survival), Focus (utility).
@@ -220,7 +230,7 @@ const SYNERGY_BONUS={
  Frost:{kind:'dodge_pct',value:.12,label:'+12% dodge chance'},
  Verdant:{kind:'mend_pct',value:.08,label:"Mends 8% of the party's HP pool each round"},
  Umbral:{kind:'hazard_guard_pct',value:.15,label:'-15% hazard severity'},
- Arcane:{kind:'escalate_pct',value:.04,label:'+4% dmg/round (stacking)'},
+ Arcane:{kind:'loot_rarity_pct',value:.10,label:'+10% odds toward Rare/Epic loot'},
 };
 const BOSS_MECHANICS=[
  {id:'enrage',name:'Enraged',desc:'Strikes harder the longer the fight drags on (past round 4).'},
@@ -587,7 +597,15 @@ function synergyBonus(){
 }
 function synergyValueFor(kind){const s=synergyBonus();return s&&s.kind===kind?s.value:0;}
 
-function weightedRarity(){const total=RARITIES.reduce((s,r)=>s+r.weight,0);let r=rand(total);for(const rar of RARITIES){if(r<rar.weight)return rar.id;r-=rar.weight;}return'common';}
+function dropRateBonus(){return relicSpecialTotal('loot_rarity_pct')+synergyValueFor('loot_rarity_pct');}
+function weightedRarity(){
+  const bonus=dropRateBonus();
+  const weights=RARITIES.map(r=>r.id==='common'?r.weight:r.weight*(1+bonus*4));
+  const total=weights.reduce((s,w)=>s+w,0);
+  let r=rand(total);
+  for(let i=0;i<RARITIES.length;i++){if(r<weights[i])return RARITIES[i].id;r-=weights[i];}
+  return'common';
+}
 function weightedRank(){const total=RANKS.reduce((s,r)=>s+r.weight,0);let r=rand(total);for(const rk of RANKS){if(r<rk.weight)return rk.id;r-=rk.weight;}return'F';}
 function pickTraitName(){const r=Math.random();if(r<.28)return pick(NEG_TRAITS);if(r<.62)return pick(POS_TRAITS);return null;}
 function genHero(rankId,levelHint){
@@ -614,7 +632,8 @@ function genRelic(rarityId){
   const hasSpecial=Math.random()<.4;
   const relic={name:`${type} ${noun}`,type,rarity:rarity.id,dmg:Math.round((hasSpecial?2:3)*rarity.mult),hp:Math.round((hasSpecial?6:9)*rarity.mult)};
   if(hasSpecial){
-    const s=pick(RELIC_SPECIALS);
+    const domain=domainForType(type);
+    const s=pick(RELIC_SPECIALS.filter(x=>x.domain===domain));
     relic.special={kind:s.kind,value:Math.round(s.value*rarity.mult*1000)/1000,label:s.label};
   }
   return relic;
@@ -812,8 +831,16 @@ function upgradeRelic(id){
   if(state.resources.crystals<cost)return flash('Not enough Crystals');
   state.resources.crystals-=cost;
   r.dmg=Math.round(r.dmg*1.15);r.hp=Math.round(r.hp*1.15);
-  if(r.special)r.special.value=Math.round(r.special.value*1.15*1000)/1000;
-  r.level=lvl+1;
+  const nextLvl=lvl+1;
+  if(r.special){
+    const growth=lvl>=3?1.30:1.15;
+    r.special.value=Math.round(r.special.value*growth*1000)/1000;
+  }else if(nextLvl>=3){
+    const domain=domainForType(r.type);
+    const s=pick(RELIC_SPECIALS.filter(x=>x.domain===domain));
+    r.special={kind:s.kind,value:Math.round(s.value*RARITIES.find(x=>x.id===r.rarity).mult*1000)/1000,label:s.label};
+  }
+  r.level=nextLvl;
   flash(`${r.name} upgraded to level ${r.level}`);save();render();
 }
 function learnSkill(heroId,skillId){
@@ -1019,7 +1046,10 @@ function engageCombat(kind){
     const xpGain=isBoss?30:(kind==='elite'?20:12);
     party.forEach(h=>gainXp(h,xpGain));
     log.push(`+${xpGain} XP to each hero in the fight.`);
-    if(!isBoss)rewardOptions=[genLoot(weightedRarity()),genLoot(weightedRarity())];
+    if(!isBoss){
+      rewardOptions=[genLoot(weightedRarity()),genLoot(weightedRarity())];
+      if(Math.random()<Math.min(.5,dropRateBonus()*2))rewardOptions.push(genLoot(weightedRarity()));
+    }
   }
   state.run.nodeState={type:'combat',log,won,kind,rounds:round,revealedCount:0,resolving:true,rewardOptions,rewardChosen:false,monsterName:monster.name};
   save();render();
@@ -1855,10 +1885,19 @@ function selfCheck(){
     if(!RANKS.find(r=>r.id===c.rank))errors.push(`${c.id} has unknown rank "${c.rank}"`);
     if(!RELIC_TYPES.includes(c.type))errors.push(`${c.id} has unknown type "${c.type}"`);
   });
-  RELIC_SPECIALS.forEach(s=>{if(!BUILD_KINDS.includes(s.kind))errors.push(`RELIC_SPECIALS has unknown kind "${s.kind}"`);});
+  const RELIC_DOMAINS=['damage','heal','chance','defense','droprate'];
+  const relicOrBuildKind=k=>BUILD_KINDS.includes(k)||k==='loot_rarity_pct';
+  RELIC_SPECIALS.forEach(s=>{
+    if(!relicOrBuildKind(s.kind))errors.push(`RELIC_SPECIALS has unknown kind "${s.kind}"`);
+    if(!RELIC_DOMAINS.includes(s.domain))errors.push(`RELIC_SPECIALS.${s.kind} has unknown domain "${s.domain}"`);
+  });
+  Object.entries(TYPE_DOMAIN).forEach(([type,domain])=>{
+    if(!RELIC_TYPES.includes(type))errors.push(`TYPE_DOMAIN has unknown type "${type}"`);
+    if(!RELIC_DOMAINS.includes(domain))errors.push(`TYPE_DOMAIN.${type} has unknown domain "${domain}"`);
+  });
   Object.entries(SYNERGY_BONUS).forEach(([type,s])=>{
     if(!RELIC_TYPES.includes(type))errors.push(`SYNERGY_BONUS has unknown type "${type}"`);
-    if(!BUILD_KINDS.includes(s.kind))errors.push(`SYNERGY_BONUS.${type} has unknown kind "${s.kind}"`);
+    if(!relicOrBuildKind(s.kind))errors.push(`SYNERGY_BONUS.${type} has unknown kind "${s.kind}"`);
   });
   Object.values(ITEM_CATEGORY_KINDS).flat().forEach(k=>{if(!BUILD_KINDS.includes(k))errors.push(`ITEM_CATEGORY_KINDS has unknown kind "${k}"`);if(!(k in ITEM_KIND_BASE))errors.push(`ITEM_KIND_BASE missing base value for "${k}"`);});
   DUAL_WIELD_CLASSES.forEach(id=>{if(!CLASS_POOL.some(c=>c.id===id))errors.push(`DUAL_WIELD_CLASSES has unknown class id "${id}"`);});
