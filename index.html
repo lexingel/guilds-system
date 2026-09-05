@@ -473,6 +473,14 @@ function load(){
 function lvl(id){return state.upgrades[id]||0;}
 function hasCap(id){return !!state.caps[id];}
 function findNode(bId,nId){return BRANCHES.find(b=>b.id===bId).nodes.find(n=>n.id===nId);}
+const GUILD_TIERS=[{min:0,name:'Founding Guild'},{min:10,name:'Established Guild'},{min:25,name:'Renowned Guild'},{min:45,name:'Legendary Guild'}];
+function guildTierInfo(){
+  const total=Object.values(state.upgrades).reduce((s,v)=>s+v,0);
+  let idx=0;
+  for(let i=0;i<GUILD_TIERS.length;i++)if(total>=GUILD_TIERS[i].min)idx=i;
+  const next=GUILD_TIERS[idx+1];
+  return{name:GUILD_TIERS[idx].name,total,next};
+}
 
 function tacticalBonus(){return 1+0.03*lvl('ops.drill');}
 function medicalRecoveryReduction(){return Math.min(.5,0.10*lvl('ops.medical'));}
@@ -540,6 +548,16 @@ function describeSkill(n){
   }
 }
 function recoveryMs(){return Math.round(120000*(1-medicalRecoveryReduction()));}
+function medicalBedCap(){return 1+Math.ceil(lvl('ops.medical')/2);}
+function occupiedBeds(){return state.heroes.filter(h=>h.bedded&&isDowned(h)).length;}
+function assignToBed(heroId){
+  const h=state.heroes.find(x=>x.id===heroId);if(!h||!isDowned(h)||h.bedded)return;
+  if(occupiedBeds()>=medicalBedCap())return flash('No beds free');
+  const remaining=h.downedUntil-Date.now();
+  h.downedUntil=Date.now()+Math.round(remaining*0.4);
+  h.bedded=true;
+  save();render();
+}
 function equippedRelics(){return state.relics.filter(r=>r.equipped);}
 function relicDmgBonus(){return equippedRelics().reduce((s,r)=>s+r.dmg,0);}
 function synergyBonus(){
@@ -1570,11 +1588,41 @@ function renderTerminal(){
   let out=`<div class="subtabs">
     <button class="subtab ${ui.termTab==='recruits'?'active':''}" onclick="setTermTab('recruits')">Hero Recruits</button>
     <button class="subtab ${ui.termTab==='auction'?'active':''}" onclick="setTermTab('auction')">Rift Auction</button>
+    <button class="subtab ${ui.termTab==='medical'?'active':''}" onclick="setTermTab('medical')">Medical Bay</button>
     <button class="subtab ${ui.termTab==='management'?'active':''}" onclick="setTermTab('management')">Guild Management</button>
   </div>`;
   if(ui.termTab==='recruits')out+=renderRecruits();
   else if(ui.termTab==='auction')out+=renderAuction();
+  else if(ui.termTab==='medical')out+=renderMedicalBay();
   else out+=renderManagement();
+  return out;
+}
+function renderMedicalBay(){
+  const cap=medicalBedCap();const occ=occupiedBeds();
+  let out=`<div class="panel">
+    <h3 style="font-size:.95rem;margin-bottom:4px">Medical Bay</h3>
+    <p class="small muted" style="margin-bottom:10px">A bedded hero heals in 40% of the normal time. Beds are limited — everyone else still recovers, just at the normal rate. Levelling the Medical Bay branch (Guild Management) adds more beds.</p>
+    <div class="small" style="margin-bottom:12px"><span style="color:var(--rift);font-weight:600">${occ}/${cap} beds occupied</span></div>`;
+  const wounded=state.heroes.filter(h=>h.hp<maxHp(h)).sort((a,b)=>(isDowned(b)?1:0)-(isDowned(a)?1:0));
+  if(!wounded.length){
+    out+=`<p class="small muted">Every hero is at full health.</p>`;
+  }else{
+    out+=`<div class="grid g3">`;
+    wounded.forEach(h=>{
+      const down=isDowned(h);const pct=Math.round(100*h.hp/maxHp(h));
+      const canBed=down&&!h.bedded&&occ<cap;
+      out+=`<div class="herocard" style="border-color:${RANK_COLOR[h.rank]}">
+        <div class="row"><span class="name">${h.name}</span></div>
+        <div class="bar"><i style="width:${pct}%;background:${pct<35?'var(--hazard)':'var(--rift)'}"></i></div>
+        <div class="small mono muted" style="margin-top:4px">${h.hp}/${maxHp(h)} HP</div>
+        ${down?`<div class="small" style="color:${h.bedded?'var(--rift)':'var(--hazard)'};margin-top:6px">${h.bedded?'Healing (bedded): ':'Recovering: '}${timeLeft(h.downedUntil)}</div>`:''}
+        ${down?`<button class="btn ${canBed?'primary':''} small" style="margin-top:8px" ${canBed?'':'disabled'} onclick="assignToBed('${h.id}')">${h.bedded?'In Bed':canBed?'Assign to Bed':'No Beds Free'}</button>`:''}
+      </div>`;
+    });
+    out+=`</div>`;
+  }
+  out+=`<div style="margin-top:14px">${fieldTriageAvailable()?`<button class="btn ${state.triageUsedThisCycle?'':'primary'}" ${state.triageUsedThisCycle?'disabled':''} onclick="fieldTriageAction()">Field Triage${state.triageUsedThisCycle?' (used)':''}</button>`:`<p class="small muted">Unlock Field Triage (Guild Management → Medical Bay capstone) to instantly heal the whole team once per rift cycle.</p>`}</div>
+  </div>`;
   return out;
 }
 
@@ -1643,7 +1691,14 @@ function renderAuction(){
 }
 
 function renderManagement(){
-  let out=`<div class="grid g4">`;
+  const tier=guildTierInfo();
+  let out=`<div class="panel" style="margin-bottom:16px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <span style="color:var(--rift);font-weight:700;font-family:'Cinzel'">${tier.name}</span>
+      ${tier.next?`<span class="small muted">${tier.total}/${tier.next.min} levels to ${tier.next.name}</span>`:`<span class="small muted">Maximum tier reached</span>`}
+    </div>
+  </div>
+  <div class="grid g4">`;
   BRANCHES.forEach(b=>{
     out+=`<div class="branch panel"><h3>${b.name}</h3><div class="sub">${b.sub}</div>`;
     b.nodes.forEach(n=>{
@@ -1651,7 +1706,7 @@ function renderManagement(){
       out+=`<div class="node">
         <div class="nn">${n.name}</div>
         <div class="pip-row">${Array.from({length:n.max},(_,i)=>`<span class="pip ${i<cur?'on':''}"></span>`).join('')}</div>
-        <div class="small muted">${n.effect(cur)}</div>`;
+        <div class="small muted">${n.effect(cur)}${!maxed?` <span style="color:var(--rift)">→ ${n.effect(cur+1)}</span>`:''}</div>`;
       if(!maxed){
         const cost=n.costBase+n.costStep*cur;
         out+=`<div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
@@ -1724,7 +1779,6 @@ function renderRoster(){
         <option value="class" ${ui.rosterSort==='class'?'selected':''}>Sort: Class</option>
         <option value="name" ${ui.rosterSort==='name'?'selected':''}>Sort: Name</option>
       </select>
-      ${fieldTriageAvailable()?`<button class="btn ${state.triageUsedThisCycle?'':'primary'}" ${state.triageUsedThisCycle?'disabled':''} onclick="fieldTriageAction()">Field Triage${state.triageUsedThisCycle?' (used)':''}</button>`:''}
     </div>
   </div>
   <div class="small muted" style="margin-bottom:6px">🎒 Item Bag <span class="muted" style="font-weight:400">— drag onto a hero's Weapon/Trinket slot to equip</span></div>
